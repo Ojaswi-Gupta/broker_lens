@@ -1,24 +1,27 @@
 """FastAPI application entrypoint for BrokerLens."""
 
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import engine, Base, SessionLocal
-from app.api.auth import router as auth_router, ensure_demo_users
+from app.api.auth import router as auth_router
+from app.api.shipments import router as shipments_router
+from app.services.seeder import seed_database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan event handler for database initialization and demo data seeding."""
-    # Create tables if not exist
+    """Lifespan event handler for database initialization and realistic customs sample data seeding."""
+    # Create all relational tables
     Base.metadata.create_all(bind=engine)
-    # Ensure demo users exist
+    # Seed database with demo users, 4 full shipments, 12 PDFs, and 60+ edit history logs
     db = SessionLocal()
     try:
-        ensure_demo_users(db)
+        seed_database(db)
     finally:
         db.close()
     yield
@@ -40,8 +43,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Static file serving for generated and uploaded customs documents
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
+os.makedirs(os.path.join(static_dir, "docs"), exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 # Include Routers
 app.include_router(auth_router)
+app.include_router(shipments_router)
 
 
 @app.get("/api/health", tags=["Health"])
@@ -64,4 +73,5 @@ def root():
         "description": "Customs Broker AI Document Extraction & 3-Way Cross-Check Workbench",
         "docs": "/docs",
         "health": "/api/health",
+        "shipments": "/api/shipments",
     }

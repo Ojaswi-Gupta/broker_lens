@@ -1,0 +1,467 @@
+# ==============================================================================
+# BROKERLENS — DETAILED PHASE-BY-PHASE AGENT PROMPTS & CODE BLUEPRINTS
+# File Path: prompts/phase_execution_playbooks.yaml
+# Repository: https://github.com/Ojaswi-Gupta/broker_lens.git
+# Usage: Feed each phase's `agent_prompt` sequentially to your AI coding agent.
+# ==============================================================================
+
+meta:
+  companion_to: "prompts/master_workflow.yaml"
+  execution_rule: "NEVER proceed to Phase N+1 until the human developer explicitly replies 'APPROVE PHASE N'."
+
+# ==============================================================================
+# PHASE 0 PLAYBOOK: REPO INITIALIZATION, MONOREPO SCAFFOLDING & CONFIG
+# ==============================================================================
+phase_0_playbook:
+  title: "Phase 0 — Repository Setup, Scaffolding & Prompt Persistence"
+  agent_prompt: |
+    You are executing PHASE 0 ONLY of `prompts/master_workflow.yaml` and `prompts/phase_execution_playbooks.yaml`.
+    DO NOT start Phase 1.
+
+    1. Verify or initialize the git repository and ensure `origin` points to `https://github.com/Ojaswi-Gupta/broker_lens.git`.
+    2. Ensure `prompts/master_workflow.yaml` and `prompts/phase_execution_playbooks.yaml` are saved in `prompts/`.
+    3. Create `prompts/phase_status.yaml` initialized with `current_phase: 0` and `status: IN_PROGRESS`.
+    4. Create the root `.gitignore` blocking:
+       `__pycache__/`, `*.py[cod]`, `.venv/`, `venv/`, `*.db`, `*.sqlite3`, `.env`, `.env.local`, `node_modules/`, `.next/`, `out/`, `dist/`, `.DS_Store`, `*.zip`.
+    5. Scaffold `backend/`:
+       - Create folders: `backend/app/{models,schemas,services,api,core}`, `backend/tests`, `backend/static/docs`, `backend/scripts`.
+       - Create `backend/requirements.txt` with exact production dependencies:
+         ```
+         fastapi==0.115.5
+         uvicorn[standard]==0.32.1
+         sqlalchemy==2.0.36
+         pydantic==2.10.2
+         pydantic-settings==2.6.1
+         python-jose[cryptography]==3.3.0
+         passlib[bcrypt]==1.7.4
+         bcrypt==4.0.1
+         python-multipart==0.0.18
+         reportlab==4.2.5
+         pypdf==5.1.0
+         pillow==11.0.0
+         google-genai==0.3.0
+         httpx==0.28.0
+         pytest==8.3.4
+         ```
+       - Create `backend/.env.example`:
+         ```
+         APP_ENV=development
+         DATABASE_URL=sqlite:///./broker_lens.db
+         JWT_SECRET_KEY=replace_with_32_byte_hex_secret_in_local_env
+         JWT_ALGORITHM=HS256
+         ACCESS_TOKEN_EXPIRE_MINUTES=720
+         GEMINI_API_KEY=your_gemini_api_key_optional_has_deterministic_fallback
+         AI_ZERO_DATA_RETENTION=true
+         AWS_REGION=ap-south-1
+         CONFIDENCE_HIGH_THRESHOLD=0.85
+         CONFIDENCE_MIN_READABLE_THRESHOLD=0.45
+         CORS_ORIGINS=http://localhost:3000
+         ```
+    6. Scaffold `frontend/`:
+       - Initialize a Next.js 14+ TypeScript + Tailwind CSS project inside `frontend/` (with `lucide-react` installed).
+       - Create `frontend/.env.example`:
+         ```
+         NEXT_PUBLIC_API_URL=http://localhost:8000
+         NEXT_PUBLIC_APP_REGION=ap-south-1 (Mumbai, India)
+         ```
+    7. Update `prompts/phase_status.yaml` to mark Phase 0 complete, create an atomic git commit `chore: initialize broker_lens monorepo structure and phase-gated workflow spec`, and HALT with the Phase Gate Report.
+
+# ==============================================================================
+# PHASE 1 PLAYBOOK: DATABASE SCHEMA, DOMAIN MODELS, RBAC & DPDP PRIVACY
+# ==============================================================================
+phase_1_playbook:
+  title: "Phase 1 — Database Schema, Core Domain Models, RBAC Auth & DPDP Masking"
+  agent_prompt: |
+    You are executing PHASE 1 ONLY. Prerequisite: Human approved Phase 0.
+    DO NOT start Phase 2.
+
+    Build the complete backend database layer, SQLAlchemy 2.0 models, Pydantic v2 schemas, JWT authentication, and DPDP Act 2023 PII masking utilities.
+
+    1. Implement `backend/app/config.py` using `pydantic_settings.BaseSettings` reading from `.env` with safe local defaults for `DATABASE_URL` (`sqlite:///./broker_lens.db`) and a dev-only fallback JWT secret if `.env` is absent.
+    2. Implement `backend/app/database.py` with `create_engine`, `SessionLocal`, `Base = declarative_base()`, and `get_db()` dependency.
+    3. Implement `backend/app/models/domain.py` with these exact 7 relational tables:
+       - `User`:
+         `id (PK)`, `email (unique, indexed)`, `full_name`, `hashed_password`, `role (DOCUMENTATION_EXECUTIVE | DOCUMENTATION_MANAGER)`, `created_at`
+       - `Shipment`:
+         `id (PK)`, `shipment_code (unique, e.g., SHP-24811)`, `title`, `supplier_name`, `supplier_country`, `importer_name`, `importer_iec`, `importer_contact_name`, `importer_contact_email`, `importer_contact_phone`, `port_of_loading`, `port_of_discharge`, `currency`, `incoterm`, `status (UPLOADED | EXTRACTING | NEEDS_REVIEW | CROSS_CHECK_FAILED | READY_FOR_APPROVAL | APPROVED | EXPORTED)`, `requires_manager_approval (bool)`, `override_reason (nullable text)`, `processing_time_minutes (float, default 11.5)`, `approved_by_id (FK users.id, nullable)`, `approved_at (nullable)`, `exported_at (nullable)`, `created_at`, `updated_at`
+       - `ShipmentDocument`:
+         `id (PK)`, `shipment_id (FK shipments.id)`, `doc_type (INVOICE | PACKING_LIST | BILL_OF_LADING)`, `file_name`, `file_url`, `page_count (int)`, `skew_angle_deg (float, default 0.0)`, `is_bilingual (bool, default False)`, `language_hint (str, e.g. 'Mandarin/English')`, `is_unreadable (bool, default False)`, `avg_confidence (float)`, `extraction_provider (str)`, `created_at`
+       - `ExtractedField`:
+         `id (PK)`, `shipment_id (FK shipments.id)`, `doc_type (INVOICE | PACKING_LIST | BILL_OF_LADING)`, `field_key`, `field_label`, `field_category (PARTIES | HEADER | TOTALS | LOGISTICS)`, `ai_extracted_value (str)`, `current_value (str)`, `unit (nullable str)`, `confidence_score (float 0.0-1.0)`, `is_low_confidence (bool)`, `is_confirmed_by_human (bool)`, `is_manual_entry (bool, default False)`, `page_number (int, default 1)`, `bbox_hint (str, e.g. 'Top-Right Header' or 'Bottom Totals Table')`, `confirmed_by_name (nullable str)`, `confirmed_at (nullable datetime)`
+       - `ShipmentLineItem`:
+         `id (PK)`, `shipment_id (FK shipments.id)`, `doc_type (INVOICE | PACKING_LIST)`, `line_number (int)`, `description (str)`, `hsn_code (str, 8-digit)`, `qty (float)`, `unit (str, PCS/NOS/KG)`, `unit_price (float, nullable for PL)`, `line_total (float, nullable for PL)`, `gross_weight_kg (float, nullable)`, `confidence_score (float)`, `is_low_confidence (bool)`, `is_confirmed_by_human (bool)`
+       - `CrossCheckResult`:
+         `id (PK)`, `shipment_id (FK shipments.id)`, `rule_code`, `rule_name`, `compared_fields (str)`, `invoice_value (nullable str)`, `packing_list_value (nullable str)`, `bol_value (nullable str)`, `discrepancy_delta (nullable str)`, `status (PASSED | FAILED | RESOLVED_BY_HUMAN)`, `severity (CRITICAL | WARNING)`, `explanation (str)`, `resolution_note (nullable str)`, `resolved_by_name (nullable str)`, `resolved_at (nullable datetime)`
+       - `FieldEditHistory`:
+         `id (PK)`, `shipment_id (FK shipments.id)`, `shipment_code (str)`, `supplier_name (str)`, `doc_type (str)`, `field_key (str)`, `field_label (str)`, `original_ai_value (str)`, `updated_human_value (str)`, `was_ai_correct (bool)`, `ai_confidence (float)`, `edited_by_name (str)`, `edited_by_role (str)`, `edit_reason (str)`, `created_at`
+    4. Implement DPDP Act 2023 PII masking helper in `backend/app/core/privacy.py`:
+       - When `mask_pii=True` is passed in query params (or for unauthorized views), mask `importer_contact_email` (`r***@luminalighting.in`), `importer_contact_phone` (`+91-98******12`), and `importer_iec` (`0314****11`).
+    5. Implement JWT authentication & RBAC dependencies in `backend/app/api/auth.py`:
+       - `POST /api/auth/login` (email + password -> JWT + user profile)
+       - `POST /api/auth/demo-login` (accepts `role: "DOCUMENTATION_EXECUTIVE" | "DOCUMENTATION_MANAGER"` and returns a real signed JWT for instant 1-click reviewer role switching)
+       - `GET /api/auth/me`
+    6. Write `backend/tests/test_models_and_auth.py` and run `pytest`.
+    7. Commit with `feat(backend): implement SQLAlchemy data model, RBAC auth, and DPDP privacy layer` and HALT for Phase 1 Gate approval.
+
+# ==============================================================================
+# PHASE 2 PLAYBOOK: REALISTIC CUSTOMS PDF GENERATOR & SAMPLE DATA SEEDER
+# ==============================================================================
+phase_2_playbook:
+  title: "Phase 2 — Realistic Bilingual/Skewed PDF Generator & Sample Data Seeder"
+  agent_prompt: |
+    You are executing PHASE 2 ONLY. Prerequisite: Human approved Phase 1.
+    DO NOT start Phase 3.
+
+    Build `backend/app/services/pdf_seed_gen.py` and `backend/app/services/seeder.py` so the app boots with real, viewable PDFs in `backend/static/docs/` and rich database records matching the client brief.
+
+    1. Implement `backend/app/services/pdf_seed_gen.py` using `reportlab`:
+       - Generate 12 real PDF documents (3 documents: `INVOICE.pdf`, `PACKING_LIST.pdf`, `BILL_OF_LADING.pdf` for each of the 4 seeded shipments `SHP-24811`, `SHP-24812`, `SHP-24813`, `SHP-24814`):
+       - **SHP-24811 (`Company B (China)`)**:
+         - `SHP-24811_INVOICE.pdf`: Commercial Invoice `INV-CB-2026-881`, Exporter `Company B (China) - Shenzhen BrightOptics Co., Ltd.`, Importer `Lumina Commercial Lighting Pvt. Ltd. (IEC: 0314098211, Navi Mumbai)`, Incoterm `FOB Shenzhen`, Currency `USD`. Line Item: `LED panel light 40W`, HSN `94054200`, Qty `2400 PCS`, Unit Price `USD 6.80`, Total `USD 16,320.00`. Packages: `240 Cartons`, Gross Wt: `3,120.00 kg`, Net Wt: `2,880.00 kg`, Container: `MSCU8492014`.
+         - `SHP-24811_PACKING_LIST.pdf`: Bilingual headers (`PACKING LIST / 装箱单`, `Gross Weight / 毛重`). Item: `LED panel light 40W`, Qty `2400 PCS`, Packages `240 Cartons`, Net Wt `2,880.00 kg`, **Gross Wt: `3,165.00 kg`** (exact mismatch from the brief!), Container `MSCU8492014`.
+         - `SHP-24811_BILL_OF_LADING.pdf`: Ocean Bill of Lading `MAEU992817410`, Vessel `MAERSK SELETAR V.642W`, Port of Loading `Shenzhen (CNSZX)`, Port of Discharge `Nhava Sheva / JNPT (INNSA)`, Container `MSCU8492014`, Packages `240 Cartons`, **Gross Cargo Weight: `3,165.00 kg`**.
+       - **SHP-24812 (`Company C (Sweden)`)**:
+         - `SHP-24812_INVOICE.pdf`: Apply a simulated canvas rotation (`canvas.rotate(-2.8)`) so the PDF visually appears slightly skewed like a real flatbed scan! Include Swedish/English bilingual labels (`FAKTURA / COMMERCIAL INVOICE`, `Artikelnr / HSN: 84818030`, `Leveransvillkor / Incoterm: CIF Nhava Sheva`). Supplier `Company C (Sweden) - Nordisk Ventil AB`, Item `Steel ball valve DN50`, Qty `180 NOS`, Unit Price `EUR 42.50`, Invoice Total `EUR 7,650.00`, Packages `18 Wooden Crates`, Gross Wt `1,460.00 kg`, Net Wt `1,350.00 kg`, Container `HLXU4029183`.
+         - `SHP-24812_PACKING_LIST.pdf` & `SHP-24812_BILL_OF_LADING.pdf`: Matching `180 NOS`, `18 Wooden Crates`, `1,460.00 kg`, Container `HLXU4029183`. (For `SHP-24812`, seed all 3-way cross-checks as `PASSED`, but seed `hsn_code` at `0.74` confidence and `incoterm` at `0.78` confidence due to the skewed bilingual scan so the reviewer can test 1-click low-confidence human confirmation).
+       - **SHP-24813 (`Shenzhen Precision Motors`)**:
+         - All 3 PDFs generated, all fields confirmed (`>= 0.93` confidence), all cross-checks `PASSED`, status `APPROVED` — ready for instant 1-click CSV export testing.
+       - **SHP-24814 (`Hamburg Chemie GmbH`)**:
+         - Invoice and BoL are clean (`80 Drums`, `16,400.00 kg`), but `SHP-24814_PACKING_LIST.pdf` is rendered with simulated heavy scan smudge/watermark noise and marked `is_unreadable = True` (`avg_confidence = 0.31`) to showcase the **Unreadable Page -> Guided Manual Entry** flow required by the brief.
+
+    2. Implement `backend/app/services/seeder.py`:
+       - Seed Demo Users (`exec@companya-cha.in` / `DemoExec!2026` and `manager@companya-cha.in` / `DemoMgr!2026`).
+       - Seed the 4 shipments, their 12 PDF documents, 45+ `ExtractedField` records, `ShipmentLineItem` records, and `CrossCheckResult` records.
+       - Seed 60 realistic historical `FieldEditHistory` records across suppliers (`Company B (China)`, `Company C (Sweden)`, `Shenzhen Precision Motors`, `Hamburg Chemie GmbH`) and fields (`invoice_number`, `invoice_date`, `hsn_code`, `incoterm`, `gross_weight_kg`, `unit_price`, `packages`, `container_number`) so the **Accuracy Report per Field and Supplier** shows realistic statistical distributions immediately upon login.
+    3. Mount `/static` in `backend/app/main.py` using FastAPI `StaticFiles` and add `X-Frame-Options: SAMEORIGIN` / CORS headers so the frontend split-screen PDF viewer embeds `/static/docs/*.pdf` cleanly.
+    4. Write a test verifying all 12 PDFs exist on disk and are non-empty, commit with `feat(seed): add realistic customs PDF generator and sample data seeder for SHP-24811 and SHP-24812`, and HALT for Phase 2 Gate approval.
+
+# ==============================================================================
+# PHASE 3 PLAYBOOK: VISION AI EXTRACTION ENGINE & UNREADABLE HANDLER
+# ==============================================================================
+phase_3_playbook:
+  title: "Phase 3 — Vision AI Extraction Pipeline, Confidence Scoring & Fallback Engine"
+  agent_prompt: |
+    You are executing PHASE 3 ONLY. Prerequisite: Human approved Phase 2.
+    DO NOT start Phase 4.
+
+    Implement `backend/app/services/ai_extractor.py` and document upload/extraction API endpoints.
+
+    1. Define strict Pydantic schema `DocumentExtractionOutput` in `backend/app/schemas/extraction.py`:
+       - Every extracted field returns:
+         `{ field_key, field_label, field_category, value, unit, confidence_score (0.0-1.0), bbox_hint, page_number }`
+       - Every extracted line item returns:
+         `{ line_number, description, hsn_code, qty, unit, unit_price, line_total, gross_weight_kg, confidence_score }`
+       - Document metadata returns:
+         `{ detected_doc_type, is_bilingual, language_hint, estimated_skew_deg, is_unreadable, unreadable_reason }`
+    2. Implement `AIExtractionService` in `backend/app/services/ai_extractor.py`:
+       - **Zero Data Retention Header & Config**: Include explicit enterprise privacy metadata (`model="gemini-2.5-flash"`, system prompt enforcing customs brokerage extraction rules, HSN normalization, and per-field confidence calibration).
+       - **Live Vision Mode**: When `GEMINI_API_KEY` is configured, passes the uploaded PDF/image bytes to Gemini Vision and parses `DocumentExtractionOutput`.
+       - **Deterministic PDF Parser & Smart Fallback Mode**: When `GEMINI_API_KEY` is not set (or in offline reviewer environment), reads the uploaded PDF text via `pypdf` (or image metadata), extracts the real numbers/text from the uploaded document using structured regex + heuristics, and assigns calibrated confidence scores.
+       - **Confidence & Unreadable Rules**:
+         - If `confidence_score < 0.85`, set `is_low_confidence = True` and `is_confirmed_by_human = False`.
+         - If `confidence_score >= 0.85`, set `is_low_confidence = False` and `is_confirmed_by_human = True`.
+         - If document `avg_confidence < 0.45` or `is_unreadable == True`, mark the document as `UNREADABLE_MANUAL_ENTRY`, set all its fields to `is_low_confidence = True`, `is_manual_entry = True`, `is_confirmed_by_human = False`, and require human manual input before cross-checks can pass.
+    3. Create endpoints in `backend/app/api/shipments.py`:
+       - `POST /api/shipments` (Create new shipment record)
+       - `POST /api/shipments/{shipment_id}/documents` (Upload Invoice, Packing List, or Bill of Lading PDF/PNG/JPG with MIME & 15MB size validation)
+       - `POST /api/shipments/{shipment_id}/extract` (Runs AI extraction across uploaded documents, populates `ExtractedField` and `ShipmentLineItem`, and triggers the Cross-Check Engine)
+       - `POST /api/shipments/demo-bundle` (1-click endpoint for reviewers that creates a fresh shipment, attaches a realistic 3-PDF bundle, and runs the full extraction + cross-check pipeline live).
+    4. Write unit tests in `backend/tests/test_ai_extractor.py` covering high-confidence extraction, low-confidence flagging (`< 0.85`), and unreadable page manual fallback (`< 0.45`).
+    5. Commit with `feat(ai): implement vision extraction pipeline with per-field confidence and unreadable fallback` and HALT for Phase 3 Gate approval.
+
+# ==============================================================================
+# PHASE 4 PLAYBOOK: 3-WAY CROSS-CHECK ENGINE, AUDIT LOGGING & EXPORT GATEKEEPER
+# ==============================================================================
+phase_4_playbook:
+  title: "Phase 4 — Deterministic 3-Way Cross-Check Engine & Export Gatekeeper"
+  agent_prompt: |
+    You are executing PHASE 4 ONLY. Prerequisite: Human approved Phase 3.
+    DO NOT start Phase 5.
+
+    Implement the mathematical heart of BrokerLens in `backend/app/services/crosscheck_engine.py`, `backend/app/services/export_service.py`, `backend/app/services/accuracy_service.py`, and their API routes.
+
+    1. Implement `run_three_way_crosschecks(db, shipment_id)` in `backend/app/services/crosscheck_engine.py`:
+       Evaluate and persist/update these 6 rules in `CrossCheckResult`:
+       - **Rule 1 (`INVOICE_LINE_MATH`)**:
+         For every Invoice line item, verify `abs((qty * unit_price) - line_total) <= 0.01`. Also verify `abs(sum(line_total) - invoice_total) <= 0.01`.
+         *Example*: `SHP-24811` -> `2400 * 6.80 = 16,320.00 == 16,320.00` (`PASSED`).
+       - **Rule 2 (`THREE_WAY_GROSS_WEIGHT`)**:
+         Compare `gross_weight_kg` across `INVOICE`, `PACKING_LIST`, and `BILL_OF_LADING`.
+         If any document is unreadable/empty or values differ by `> 0.01 kg`, mark `FAILED` (`CRITICAL`).
+         *Example*: `SHP-24811` -> Invoice `3120.00 kg` vs Packing List `3165.00 kg` vs BoL `3165.00 kg` -> `FAILED` with `discrepancy_delta = "45.00 kg (Invoice 3,120 kg vs PL/BoL 3,165 kg)"`.
+       - **Rule 3 (`TWO_WAY_NET_WEIGHT`)**:
+         Compare `net_weight_kg` between `INVOICE` and `PACKING_LIST`, plus check `gross_weight_kg >= net_weight_kg`.
+       - **Rule 4 (`THREE_WAY_PACKAGES`)**:
+         Compare `packages` count across `INVOICE`, `PACKING_LIST`, and `BILL_OF_LADING`.
+       - **Rule 5 (`TWO_WAY_ITEM_QTY`)**:
+         Compare total line item quantity between `INVOICE` and `PACKING_LIST`.
+       - **Rule 6 (`THREE_WAY_CONTAINER_AND_SUPPLIER`)**:
+         Compare normalized `container_number` (e.g., `MSCU8492014`) and `supplier_name` across all 3 documents.
+       - **Automatic Status Transition**:
+         - If any cross-check is `FAILED` -> `shipment.status = "CROSS_CHECK_FAILED"`.
+         - Else if any `ExtractedField` or `ShipmentLineItem` has `(is_low_confidence and not is_confirmed_by_human)` or `is_manual_entry and not is_confirmed_by_human` -> `shipment.status = "NEEDS_REVIEW"`.
+         - Else if `shipment.requires_manager_approval and not shipment.approved_by_id` -> `shipment.status = "READY_FOR_APPROVAL"`.
+         - Else -> `shipment.status = "APPROVED"`.
+
+    2. Implement Human Review & Resolution Endpoints in `backend/app/api/review.py`:
+       - `PATCH /api/shipments/{id}/fields/{field_id}`:
+         - Updates `current_value` (if edited) and sets `is_confirmed_by_human = True`, `confirmed_by_name = current_user.full_name`, `confirmed_at = utcnow()`.
+         - Logs an immutable entry in `FieldEditHistory` comparing `ai_extracted_value` vs `current_value` (`was_ai_correct = (normalized(ai) == normalized(human))`) tagged with `supplier_name` and `field_key`.
+         - Immediately re-runs `run_three_way_crosschecks(db, shipment_id)` so fixing `3120` -> `3165` on the Invoice (or vice versa) automatically turns `THREE_WAY_GROSS_WEIGHT` green (`PASSED`)!
+       - `POST /api/shipments/{id}/confirm-all-high-confidence`:
+         - Confirms all fields where `confidence_score >= 0.85`, leaving only `< 0.85` fields for deliberate human inspection.
+       - `POST /api/shipments/{id}/crosschecks/{check_id}/resolve`:
+         - Allows an operator to resolve a cross-check either by:
+           (a) `action = "SYNC_TO_AUTHORITATIVE_VALUE"` (e.g., updating Invoice gross weight to match Packing List/BoL `3165.00 kg` after importer confirmation), OR
+           (b) `action = "OVERRIDE_WITH_AUDIT_NOTE"` (requires a non-empty `resolution_note` >= 10 chars, sets `status = "RESOLVED_BY_HUMAN"`, and sets `shipment.requires_manager_approval = True` so a Documentation Manager must sign off).
+       - `POST /api/shipments/{id}/approve`:
+         - Requires `DOCUMENTATION_MANAGER` role when `requires_manager_approval == True`. Transitions shipment to `APPROVED`.
+
+    3. Implement Export Gatekeeper & Customs CSV Formatter in `backend/app/services/export_service.py`:
+       - **Hard Gate**: Check:
+         1. Unconfirmed fields count == 0
+         2. Failed cross-checks count == 0
+         3. Unreadable unentered documents count == 0
+         4. If `requires_manager_approval == True`, `approved_by_id` is present.
+         If any check fails, raise HTTP `422 Unprocessable Entity` with structured JSON detailing the exact blocking items (`blocking_fields`, `blocking_crosschecks`, `requires_manager_signoff`).
+       - **Filing Software CSV/Excel Layout**:
+         Generate UTF-8 with BOM (`\ufeff`) CSV matching standard Indian Customs (ICEGATE/VisualIMPEX) flat import columns:
+         `Job_Ref_No,Shipment_ID,Importer_Name,Importer_IEC,Supplier_Name,Invoice_No,Invoice_Date,Currency,Incoterm,BL_No,Port_of_Loading,Port_of_Discharge,Container_No,Total_Packages,Gross_Weight_KG,Net_Weight_KG,Line_No,HSN_Code,Item_Description,Item_Qty,Unit,Unit_Price,Line_Assessable_Value_FC,Invoice_Total_FC,Verified_By,Manager_Approved_By,Export_Timestamp_IST`
+
+    4. Implement Accuracy & Audit Analytics Service in `backend/app/services/accuracy_service.py` (`GET /api/analytics/overview`):
+       - Aggregates `FieldEditHistory` + confirmed fields to return:
+         - Overall field extraction accuracy % vs 95% target
+         - Per-Field Accuracy breakdown (`field_key`, `field_label`, `total_evaluated`, `correct_count`, `edited_count`, `accuracy_pct`, `avg_confidence`)
+         - Per-Supplier Accuracy breakdown (`supplier_name`, `country`, `shipments_count`, `fields_evaluated`, `accuracy_pct`, `common_issue`)
+         - Recent immutable edit audit trail list.
+
+    5. Write comprehensive tests in `backend/tests/test_crosscheck_engine.py` and `backend/tests/test_export_gatekeeper.py`, run `pytest`, commit with `feat(crosscheck): build 3-way cross-check engine, field edit audit logger, and export gatekeeper`, and HALT for Phase 4 Gate approval.
+
+# ==============================================================================
+# PHASE 5 PLAYBOOK: FRONTEND DESIGN SYSTEM, AUTH & SHIPMENT LIST (SCREENS 1-3)
+# ==============================================================================
+phase_5_playbook:
+  title: "Phase 5 — Minimalist Frontend Shell, Role Auth, Shipment Dashboard & Upload"
+  agent_prompt: |
+    You are executing PHASE 5 ONLY. Prerequisite: Human approved Phase 4.
+    DO NOT start Phase 6.
+
+    Build the Frontend Design System, Auth context, Top Navigation Bar, Screen 1 (`/login`), Screen 2 (`/shipments`), and Screen 3 (`/shipments/new`).
+
+    1. Design System & Aesthetic Rules (`frontend/src/app/globals.css` & Tailwind):
+       - Aesthetic: Swiss Industrial Minimalist (inspired by Linear & Stripe Dashboard).
+       - Background: `#F8FAFC` (`bg-slate-50`), Cards: `#FFFFFF` (`bg-white border border-slate-200/80 shadow-xs rounded-lg`).
+       - Typography: `Inter` for prose/labels; monospace (`font-mono tabular-nums`) for all HSN codes, weights, quantities, invoice numbers, container IDs, and confidence percentages.
+       - Semantic Status Colors:
+         - High Confidence (`>=85%`) / Passed: `bg-emerald-50 text-emerald-700 border-emerald-200`
+         - Low Confidence (`<85%`) / Needs Confirmation: `bg-amber-50 text-amber-800 border-amber-300`
+         - Cross-Check Failed / Unreadable (`<45%`): `bg-rose-50 text-rose-700 border-rose-300`
+
+    2. Top Operational Header (`frontend/src/components/Navbar.tsx`):
+       - Brand mark: `BrokerLens` with subtitle `Nhava Sheva Customs Documentation Workbench`.
+       - Primary Nav Links: `Shipments`, `Upload New`, `Accuracy & Audit Report`.
+       - Right Utility Bar:
+         - **DPDP Act 2023 PII Mask Toggle**: Live switch (`PII Masked` / `PII Visible`) that masks/unmasks importer contact emails, phones, and IEC numbers across the UI.
+         - **1-Click Reviewer Role Switcher**: Instant toggle between `Rohan Deshmukh (Doc Executive)` and `Priya Nair (Doc Manager)` calling `/api/auth/demo-login` so the evaluator can test both roles without logging out.
+
+    3. Screen 1 (`/login`):
+       - Minimalist executive sign-in card with email/password form PLUS two prominent 1-click evaluator buttons:
+         - `[Sign in as Documentation Executive — Rohan Deshmukh]`
+         - `[Sign in as Documentation Manager — Priya Nair]`
+       - Displays security compliance footer: `Hosted in India (ap-south-1) • Zero AI Data Retention • DPDP Act 2023 Compliant`.
+
+    4. Screen 2 (`/shipments` — Shipment Status List & ROI Header):
+       - **4-Card KPI Strip**:
+         1. `Active Shipments` (with count of Ready vs Action Needed)
+         2. `Cross-Check Mismatches Caught` (highlighting `SHP-24811` weight delta caught before Bill of Entry filing)
+         3. `Avg Processing Time` (`11.5 mins / shipment` — down from `45 mins` baseline, meeting `<15 min` target)
+         4. `Field Extraction Accuracy` (`95.8%` across historical benchmark)
+       - **Filter Bar**: Status tabs (`All`, `Cross-Check Failed`, `Needs Review`, `Ready for Approval`, `Approved / Exported`) + instant search by Shipment ID, Supplier, Importer, or Container No.
+       - **High-Density Shipment Table** (responsive cards on mobile):
+         Columns: `Shipment ID`, `Importer & Port`, `Supplier`, `Docs Uploaded (INV / PL / BoL pills)`, `Gross Wt Cross-Check`, `AI Confidence / Pending Actions`, `Status`, `Primary Action (Review Workbench / Export CSV)`.
+
+    5. Screen 3 (`/shipments/new` — Document Dropzone & Live AI Extraction):
+       - Form for Importer Name, IEC, Supplier Name, Port of Loading, plus 3 visual drag-and-drop cards for **Commercial Invoice**, **Packing List**, and **Bill of Lading**.
+       - Includes a prominent **"⚡ 1-Click Load & Extract Sample Consignment"** button that calls `/api/shipments/demo-bundle`, runs the extraction + 3-way cross-check pipeline with step-by-step progress feedback, and redirects straight into the Split-Screen Review Workbench.
+
+    6. Verify `npm run build` succeeds cleanly, commit with `feat(frontend): build minimalist auth, shipment status dashboard, and 3-document upload flow`, and HALT for Phase 5 Gate approval.
+
+# ==============================================================================
+# PHASE 6 PLAYBOOK: SPLIT-SCREEN REVIEW WORKBENCH & 3-WAY CROSS-CHECK UI
+# ==============================================================================
+phase_6_playbook:
+  title: "Phase 6 — Side-by-Side Document & Field Review Workbench (Screens 4-5)"
+  agent_prompt: |
+    You are executing PHASE 6 ONLY. Prerequisite: Human approved Phase 5.
+    DO NOT start Phase 7.
+
+    Build the flagship screen of the application: `frontend/src/app/shipments/[id]/review/page.tsx`.
+    The client brief states: *"The review screen is used all day: show the document and fields side by side, make uncertain fields obvious at a glance, and keep every action one click away."*
+
+    1. **Sticky Workbench Header Bar**:
+       - Left: Back to Shipments, `SHP-24811` badge, Supplier (`Company B (China)`), Status pill.
+       - Center: Live Clearance Readiness Meter:
+         - Shows exact remaining blockers: e.g., `1 Cross-Check Failed • 2 Low-Confidence Fields Unconfirmed` or `✓ All Fields Confirmed & Cross-Checks Passed`.
+       - Right (1-Click Actions):
+         - `[Confirm All High-Confidence (≥85%)]` button
+         - `[Manager Approve]` button (enabled for Documentation Manager when overrides exist)
+         - `[Export Filing CSV]` button (visually locked with a lock icon and hover breakdown whenever any low-confidence field or failed cross-check is unresolved; turns solid Emerald and unlocks the instant the last item is cleared).
+
+    2. **Left Pane (50% Desktop Width): Interactive Multi-Document Viewer**:
+       - **Document Selector Tabs**:
+         - `Commercial Invoice` | `Packing List` | `Bill of Lading` (showing confidence badge, bilingual indicator e.g. `Mandarin/EN`, or skew badge `-2.8° Skew` on each tab).
+       - **Scan & Skew Toolbar**:
+         - Zoom controls (`75%`, `100%`, `125%`, `150%`)
+         - **De-Skew Rotation Controls**: `[-5°]`, `[-2.8° Auto-Deskew]`, `[0° Reset]`, `[+2.8°]`, `[+90°]` — applies real CSS transform rotation to the document canvas so the operator can straighten skewed scans like `SHP-24812` in 1 click!
+         - Active Field Locator Banner: When the user clicks or hovers any field on the right pane, displays: `📍 Viewing Source: [Document Type] — [BBox Section Hint] (Page 1)` and automatically switches to the corresponding document tab.
+       - **Embedded PDF / High-Clarity Document Renderer**:
+         - Renders the real generated PDF from `/static/docs/...` inside a clean container AND provides a toggleable **"Structured Document Overlay View"** so even on mobile browsers that don't natively render inline PDFs, the full formatted Invoice/Packing List/BoL layout is visible side-by-side.
+
+    3. **Right Pane (50% Desktop Width): 3-Way Cross-Check Matrix & Field Confirmation Workbench**:
+       - **Panel 1: 3-Way Cross-Check Matrix (Top Priority)**:
+         - Displays a crisp comparison table across all three documents:
+           Columns: `Validation Rule | Commercial Invoice | Packing List | Bill of Lading | Delta / Status | 1-Click Resolution`
+         - For `SHP-24811`, highlights the `THREE_WAY_GROSS_WEIGHT` row in Rose-50:
+           - Invoice: `3,120.00 kg` | Packing List: `3,165.00 kg` | Bill of Lading: `3,165.00 kg` | Delta: `45.00 kg Mismatch`
+           - 1-Click Resolution Buttons right inside the row:
+             1. `[Sync Invoice to 3,165 kg (Match PL & BoL)]`
+             2. `[Sync PL & BoL to 3,120 kg (Match Invoice)]`
+             3. `[Override with Customs Audit Note]` (opens inline input for justification note)
+       - **Panel 2: Unreadable Document Alert Banner (Active when `doc.is_unreadable == True`, e.g., `SHP-24814`)**:
+         - Clear crimson alert explaining Vision AI confidence (`31%`) fell below minimum legibility threshold (`45%`), switching those fields into **Manual Entry Mode**.
+       - **Panel 3: Extracted Fields by Document/Category**:
+         - Filter pills: `All Fields`, `Needs Attention Only (Amber/Red)`, `Invoice`, `Packing List`, `Bill of Lading`.
+         - Each field card displays:
+           - Field Label & Source Document badge (`INV`, `PL`, `BoL`)
+           - AI Confidence Pill (`98%` Emerald or `74% Low Confidence` Amber or `Manual Entry` Rose)
+           - Inline editable input (using `font-mono` for numbers/codes)
+           - **1-Click Action**: A single `[✓ Confirm]` button (if unconfirmed) or a green `✓ Confirmed by [Name]` badge. Editing a value and pressing Enter or clicking `[Save & Confirm]` updates the backend, logs the audit entry, and re-evaluates all 3-way cross-checks live without page reload.
+       - **Panel 4: Line Items & HSN Verification Table**:
+         - Displays `Line #`, `Description`, `8-Digit HSN Code`, `Qty`, `Unit Price`, `Line Total`, `Math Check (Qty × Price = Total)`, and 1-click `[✓ Confirm]` button.
+
+    4. Verify `npm run build` passes with zero errors, commit with `feat(workbench): build split-screen document viewer, low-confidence review, and 3-way cross-check matrix`, and HALT for Phase 6 Gate approval.
+
+# ==============================================================================
+# PHASE 7 PLAYBOOK: CUSTOMS FILING EXPORT & ACCURACY ANALYTICS (SCREENS 6-7)
+# ==============================================================================
+phase_7_playbook:
+  title: "Phase 7 — Customs Filing Software Export & Per-Field/Supplier Accuracy Reports"
+  agent_prompt: |
+    You are executing PHASE 7 ONLY. Prerequisite: Human approved Phase 6.
+    DO NOT start Phase 8.
+
+    Build Screen 6 (`/shipments/[id]/export` + inline export preview modal) and Screen 7 (`/analytics`).
+
+    1. **Screen 6: Customs Filing Software Excel/CSV Export (`/shipments/[id]/export`)**:
+       - Shows a pre-flight clearance summary card:
+         - `All Low-Confidence Fields Confirmed: ✓`
+         - `3-Way Cross-Checks (Invoice vs PL vs BoL): ✓ Passed / Resolved`
+         - `Manager Approval Status: ✓ Verified`
+       - Shows an interactive **Filing Software Import Table Preview** displaying the exact columns expected by Nhava Sheva customs filing software (`Job_Ref_No`, `Importer_IEC`, `Supplier_Name`, `Invoice_No`, `Currency`, `Incoterm`, `HSN_Code`, `Item_Description`, `Qty`, `Unit_Price`, `Assessable_Value`, `Packages`, `Gross_Weight_KG`, `Net_Weight_KG`, `Container_No`).
+       - Provides 2 download actions:
+         - `[⬇ Download Filing Software Excel CSV (.csv)]` (triggers real file download of `BrokerLens_Filing_${shipment_code}.csv` with UTF-8 BOM)
+         - `[📋 Copy Tab-Delimited Rows for Direct Excel Paste]` (copies TSV to clipboard so an executive can paste directly into an open Excel checklist in 1 click).
+
+    2. **Screen 7: Accuracy Report per Field & Supplier + Edit Audit Log (`/analytics`)**:
+       - Directly fulfills the MUST HAVE requirement: *"Edit history and accuracy report per field and supplier"*.
+       - **Top Summary Cards**:
+         - `Overall Field Accuracy` (e.g., `95.8%` vs `95.0% Target`)
+         - `Total Fields Audited`
+         - `Human Corrections Logged`
+         - `Projected Annual Savings` (`₹49.8 Lakh / yr` based on entry time cut from 45m to 11.5m and BoE error reduction).
+       - **Section 1: Accuracy per Field Table (with visual progress bars)**:
+         - Columns: `Field Name`, `Category`, `Total Evaluated`, `AI Exact Match`, `Human Corrected`, `Avg AI Confidence`, `Field Accuracy %`, `Status vs 95% Target`.
+         - Highlights which fields are rock-solid (`Invoice Number: 99.2%`, `Quantity: 98.5%`) vs which fields require the most human attention (`8-Digit HSN Code: 91.4%`, `Gross Weight: 93.8%` due to pallet weight discrepancies).
+       - **Section 2: Accuracy per Supplier Table**:
+         - Columns: `Supplier Name`, `Origin`, `Shipments Processed`, `Fields Evaluated`, `Correction Rate`, `Supplier Accuracy %`, `Recurring Document Pattern`.
+         - Shows actionable insights: e.g., `Company B (China)` (`93.2%` — *"Bilingual Mandarin/EN Packing List often includes pallet weight in Gross Wt while Invoice excludes it"*), `Company C (Sweden)` (`94.6%` — *"Skewed flatbed scans (-3°) with Swedish compound headers"*), `Shenzhen Precision Motors` (`98.9%` — *"Standardized digital PDF invoices"*).
+       - **Section 3: Immutable Field Edit History Log**:
+         - Searchable/filterable table showing every single human edit made in the system (including edits made live by the reviewer during their session!):
+           `Timestamp | Shipment ID | Supplier | Document | Field | Original AI Value → Human Confirmed Value | AI Confidence | Edited By (Role)`.
+
+    3. Verify `npm run build` succeeds, commit with `feat(export-analytics): add customs Excel/CSV export layout and per-field/supplier accuracy reports`, and HALT for Phase 7 Gate approval.
+
+# ==============================================================================
+# PHASE 8 PLAYBOOK: AUTOMATED TESTING, SECURITY AUDIT & UX EDGE CASES
+# ==============================================================================
+phase_8_playbook:
+  title: "Phase 8 — Automated Test Suite, Security Hardening & Edge-Case Verification"
+  agent_prompt: |
+    You are executing PHASE 8 ONLY. Prerequisite: Human approved Phase 7.
+    DO NOT start Phase 9.
+
+    Harden the application, run a comprehensive automated test suite, and audit security and UI states.
+
+    1. Ensure `backend/tests/` includes and passes at least 15 automated test cases across:
+       - `test_crosscheck_engine.py`:
+         - Verifies `SHP-24811` detects the exact `3120 kg` (Invoice) vs `3165 kg` (Packing List & BoL) mismatch.
+         - Verifies `SHP-24811` invoice math (`2400 * 6.80 = 16320.00`) passes.
+         - Verifies `SHP-24812` math (`180 * 42.50 = 7650.00`) and weight (`1460 kg`) pass while low-confidence fields flag `NEEDS_REVIEW`.
+         - Verifies editing a mismatched weight re-runs the cross-check engine and clears the failure.
+       - `test_export_gatekeeper.py`:
+         - Verifies `GET /api/shipments/SHP-24811/export` returns `422` while the weight mismatch is unresolved.
+         - Verifies `GET /api/shipments/SHP-24812/export` returns `422` while low-confidence fields are unconfirmed.
+         - Verifies `GET /api/shipments/SHP-24813/export` returns `200 OK` with valid CSV headers and line data.
+         - Verifies resolving `SHP-24811` unlocks `200 OK` CSV export.
+       - `test_rbac_and_security.py`:
+         - Verifies unauthenticated API calls are rejected (`401`).
+         - Verifies `DOCUMENTATION_EXECUTIVE` cannot approve a shipment flagged `requires_manager_approval=True` (`403 Forbidden`), while `DOCUMENTATION_MANAGER` succeeds (`200 OK`).
+         - Verifies DPDP Act 2023 `mask_pii=true` redacts importer email, phone, and IEC.
+         - Verifies invalid file uploads (e.g., `.exe` or `.sh`) are rejected (`400`).
+       - `test_accuracy_analytics.py`:
+         - Verifies editing a field creates a `FieldEditHistory` record and updates the `/api/analytics/overview` response.
+    2. Audit git history and working tree to confirm zero API keys, `.env` files, or secrets exist anywhere.
+    3. Verify all UI screens have loading skeletons, empty filter states, error banners, and mobile-responsive layouts (`375px` width).
+    4. Commit with `test(core): add comprehensive pytest suite for 3-way cross-checks, export gatekeeper, and RBAC` and HALT for Phase 8 Gate approval.
+
+# ==============================================================================
+# PHASE 9 PLAYBOOK: TECHNICAL DESIGN DOCUMENT (TDD), DEPLOYMENT.MD & ZIP PACKAGE
+# ==============================================================================
+phase_9_playbook:
+  title: "Phase 9 — Technical Design Document (PDF/Word), deployment.md & Submission Zip"
+  agent_prompt: |
+    You are executing PHASE 9 ONLY. Prerequisite: Human approved Phase 8.
+
+    Generate the final submission files required by the Isocode brief:
+    1. `docs/TDD.md` AND a generated `Technical_Design_Document.pdf` (via a Python ReportLab script `backend/scripts/generate_tdd_pdf.py` so the PDF is crisp, well-typeset, and under 2 MB).
+    2. `deployment.md` at the root of the repository.
+    3. `submission_package.zip` containing `Technical_Design_Document.pdf` and `deployment.md` (verified < 25 MB).
+
+    Ensure `Technical_Design_Document.pdf` (and `docs/TDD.md`) covers these exact sections required by the brief:
+    - **Header Block**:
+      - Project: BrokerLens — Customs Broker AI Document Extraction & 3-Way Cross-Check Workbench
+      - GitHub Repository URL: `https://github.com/Ojaswi-Gupta/broker_lens.git` (prominently at the very top of Page 1)
+      - Live Deployment URL: (Include live URL / placeholder slot)
+      - Author: Ojaswi Gupta
+    - **Section 1: Executive Summary & Client ROI Model**:
+      - Company A (Navi Mumbai / Nhava Sheva, 85 staff, 14 documentation executives, 1,100 shipments/month).
+      - Quantified baseline bleed: ₹34.65L/yr manual typing (9,900 hrs @ ₹350/hr) + ₹35.64L/yr amended Bills of Entry & demurrage (396 cases @ ₹9,000) = ₹70.29L/yr.
+      - How BrokerLens delivers within ₹7.5L and 6 weeks, cutting entry time from 45m to <12m and blocking mismatches before ICEGATE filing.
+    - **Section 2: Labeled Assumptions (`ASSUMPTION-01` to `ASSUMPTION-05`)**:
+      - Explicitly labeled table covering export layout, confidence thresholds (`>=85%` High, `45-84%` Low-Confidence Review, `<45%` Unreadable Manual Fallback), zero-tolerance cross-check math, RBAC escalation rules, and hybrid Gemini Vision + deterministic parser architecture.
+    - **Section 3: System Architecture & Why We Chose It**:
+      - Decoupled Next.js 14 (TypeScript/Tailwind) + FastAPI (Python/SQLAlchemy 2.0/Pydantic v2) + PostgreSQL/SQLite.
+      - Compliance architecture: India (`ap-south-1` Mumbai) hosting, DPDP Act 2023 PII masking, Zero Data Retention AI policy.
+    - **Section 4: Data Model, State Machine & Main Flows**:
+      - 7-table schema (`users`, `shipments`, `shipment_documents`, `extracted_fields`, `shipment_line_items`, `crosscheck_results`, `field_edit_history`).
+      - Deterministic 3-Way Cross-Check Engine math across Invoice, Packing List, and Bill of Lading.
+    - **Section 5: How the AI Works & What Happens When It Is Wrong**:
+      - Structured vision extraction with per-field confidence calibration.
+      - Handling skewed scans (`SHP-24812`) and bilingual Mandarin/Swedish headers (`SHP-24811`, `SHP-24812`).
+      - Handling unreadable pages (`SHP-24814`) via Guided Manual Entry fallback.
+      - Non-bypassable HTTP 422 Export Gatekeeper + closed-loop accuracy tracking per field and per supplier.
+    - **Section 6: UI & Design Decisions (Key Screens & Why They Look the Way They Do)**:
+      - Rationale for Swiss Industrial Minimalist palette, tabular monospace numerals, 50/50 Split-Screen Review Workbench with inline de-skew controls, and 1-click confirmation ergonomics.
+    - **Section 7: Scope Trade-offs — What We Cut & What We Would Build Next**:
+      - What we cut to make the core rock-solid: direct ICEGATE EDIFACT integration, automated HSN tariff classification/duty calculation, importer portal, WhatsApp bot ingestion.
+      - Next 6-week roadmap: Supplier-specific prompt few-shot tuning from `FieldEditHistory`, automated email/IMAP ingestion, multi-page invoice line-item table stitching.
+
+    Ensure `deployment.md` covers:
+    1. **Step-by-Step Local Setup** (Backend setup, Frontend setup, running `pytest`, and opening `http://localhost:3000`).
+    2. **Cloud Deployment Architecture & Environment Variables** (Exact list of variable NAMES ONLY — never values).
+    3. **Demo Login Credentials & 3-Minute Reviewer Walkthrough**:
+       - Documentation Executive: `exec@companya-cha.in` / `DemoExec!2026` (or 1-click Demo Button)
+       - Documentation Manager: `manager@companya-cha.in` / `DemoMgr!2026` (or 1-click Demo Button)
+       - Guided test path for `SHP-24811` (3120 kg vs 3165 kg mismatch), `SHP-24812` (skewed scan + low-confidence review), `SHP-24813` (instant CSV export), and `SHP-24814` (unreadable page manual entry).
+
+    Commit with `docs(submission): generate Technical Design Document (TDD) and deployment.md for final hand-in` and present the Final Phase 9 Gate Report.

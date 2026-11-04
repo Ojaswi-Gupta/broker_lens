@@ -42,6 +42,8 @@ import {
   Filter,
   CheckCheck,
   UserCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -64,6 +66,7 @@ export default function ReviewWorkbenchPage() {
   const [rotationDeg, setRotationDeg] = useState<number>(0);
   const [highlightedFieldKey, setHighlightedFieldKey] = useState<string | null>(null);
   const [highlightedRegion, setHighlightedRegion] = useState<string | null>(null);
+  const [isDocumentCollapsed, setIsDocumentCollapsed] = useState<boolean>(false);
 
   // Mobile View Switcher (for < 1024px screens)
   const [mobileView, setMobileView] = useState<"SPLIT" | "DOC" | "FIELDS">("FIELDS");
@@ -168,6 +171,10 @@ export default function ReviewWorkbenchPage() {
     setActiveDocType(field.doc_type);
     setHighlightedFieldKey(field.field_key);
     setHighlightedRegion(field.bbox_hint || "Document Body");
+    // Auto-expand document viewer if it was minimized so operator can inspect the bounding box
+    if (isDocumentCollapsed) {
+      setIsDocumentCollapsed(false);
+    }
     // On mobile, switch to doc view
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setMobileView("DOC");
@@ -588,78 +595,140 @@ export default function ReviewWorkbenchPage() {
       {/* =========================================================================
           MAIN 50/50 WORKBENCH CONTAINER
           ========================================================================= */}
-      <div className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col lg:flex-row gap-4 p-4 sm:p-6">
+      <div className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col lg:flex-row gap-4 p-4 sm:p-6 transition-all duration-300 ease-in-out">
         {/* =======================================================================
-            STEP 2: LEFT PANE (50% DESKTOP WIDTH) — INTERACTIVE MULTI-DOCUMENT VIEWER
+            STEP 2: LEFT PANE — INTERACTIVE MULTI-DOCUMENT VIEWER (MINIMIZABLE)
             ======================================================================= */}
-        <div
-          className={`flex flex-col lg:w-1/2 rounded-xl border border-slate-200/90 bg-white shadow-xs overflow-hidden lg:sticky lg:top-[6.2rem] lg:h-[calc(100vh-7.5rem)] ${
-            mobileView === "FIELDS" ? "hidden lg:flex" : "flex"
-          }`}
-        >
-          {/* Document Tabs */}
-          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-3 pt-2">
-            <div className="flex items-center gap-1">
+        {isDocumentCollapsed ? (
+          <aside
+            onClick={() => setIsDocumentCollapsed(false)}
+            title="Click to expand Document Viewer"
+            className="hidden lg:flex flex-col items-center justify-between w-14 min-w-[3.5rem] rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50/90 shadow-xs py-4 lg:sticky lg:top-[6.2rem] lg:h-[calc(100vh-7.5rem)] transition-all duration-300 ease-in-out cursor-pointer group select-none z-10"
+          >
+            {/* Top Expand Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDocumentCollapsed(false);
+              }}
+              title="Expand Document Viewer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 group-hover:bg-white group-hover:border-slate-300 group-hover:text-slate-900 shadow-2xs transition-all"
+            >
+              <PanelLeftOpen className="h-4 w-4 text-emerald-600" />
+            </button>
+
+            {/* Document Status Indicators */}
+            <div className="flex flex-col items-center gap-2.5 my-3">
               {(["INVOICE", "PACKING_LIST", "BILL_OF_LADING"] as DocumentType[]).map((dType) => {
                 const doc = shipment.documents?.find((d) => d.doc_type === dType);
                 const isActive = activeDocType === dType;
-                const label =
-                  dType === "INVOICE"
-                    ? "Commercial Invoice"
-                    : dType === "PACKING_LIST"
-                    ? "Packing List"
-                    : "Bill of Lading";
-
+                const dotColor = doc?.is_unreadable
+                  ? "bg-rose-500"
+                  : (doc?.avg_confidence || 0) >= 0.85
+                  ? "bg-emerald-500"
+                  : "bg-amber-500";
                 return (
-                  <button
+                  <div
                     key={dType}
-                    onClick={() => {
-                      setActiveDocType(dType);
-                      // Reset highlighted field when switching doc manually
-                      setHighlightedFieldKey(null);
-                    }}
-                    className={`flex items-center gap-1.5 rounded-t-lg border-t border-x px-3 py-2 text-xs font-medium transition-all ${
-                      isActive
-                        ? "border-slate-300 bg-white text-slate-900 font-semibold shadow-xs"
-                        : "border-transparent text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    <FileText className="h-3.5 w-3.5 text-slate-500" />
-                    <span>{label}</span>
-                    {doc && (
-                      <span
-                        className={`rounded px-1 text-[9px] font-mono font-bold ${
-                          doc.is_unreadable
-                            ? "bg-rose-100 text-rose-800"
-                            : doc.avg_confidence >= 0.85
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-amber-100 text-amber-900"
-                        }`}
-                      >
-                        {doc.is_unreadable ? "UNREADABLE" : `${Math.round(doc.avg_confidence * 100)}%`}
-                      </span>
-                    )}
-                  </button>
+                    title={`${dType}: ${doc?.is_unreadable ? "Unreadable" : Math.round((doc?.avg_confidence || 0) * 100) + "%"}`}
+                    className={`h-2.5 w-2.5 rounded-full ${dotColor} ${isActive ? "ring-2 ring-slate-900 ring-offset-1" : "opacity-60"}`}
+                  />
                 );
               })}
             </div>
 
-            {/* Skew & Bilingual Meta Badge on Tab Bar */}
-            {activeDoc && (
-              <div className="hidden sm:flex items-center gap-1.5 text-[10px] pb-1">
-                {activeDoc.is_bilingual && (
-                  <span className="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.2 border border-indigo-200 font-mono">
-                    {activeDoc.language_hint || "Bilingual"}
-                  </span>
-                )}
-                {activeDoc.skew_angle_deg !== 0 && (
-                  <span className="rounded bg-amber-50 text-amber-800 px-1.5 py-0.2 border border-amber-300 font-mono">
-                    {activeDoc.skew_angle_deg}° Skew
-                  </span>
-                )}
+            {/* Rotated Vertical Title */}
+            <div className="flex items-center gap-2 transform -rotate-90 whitespace-nowrap text-[11px] font-mono font-bold tracking-wider text-slate-500 group-hover:text-slate-900 transition-colors my-auto">
+              <FileText className="h-3.5 w-3.5 text-slate-400 rotate-90" />
+              <span>DOCUMENT VIEWER</span>
+            </div>
+
+            {/* Bottom Expand Label */}
+            <div className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 group-hover:bg-emerald-100 transition-colors">
+              EXPAND →
+            </div>
+          </aside>
+        ) : (
+          <div
+            className={`flex flex-col lg:w-1/2 rounded-xl border border-slate-200/90 bg-white shadow-xs overflow-hidden lg:sticky lg:top-[6.2rem] lg:h-[calc(100vh-7.5rem)] transition-all duration-300 ease-in-out ${
+              mobileView === "FIELDS" ? "hidden lg:flex" : "flex"
+            }`}
+          >
+            {/* Document Tabs */}
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-3 pt-2">
+              <div className="flex items-center gap-1">
+                {(["INVOICE", "PACKING_LIST", "BILL_OF_LADING"] as DocumentType[]).map((dType) => {
+                  const doc = shipment.documents?.find((d) => d.doc_type === dType);
+                  const isActive = activeDocType === dType;
+                  const label =
+                    dType === "INVOICE"
+                      ? "Commercial Invoice"
+                      : dType === "PACKING_LIST"
+                      ? "Packing List"
+                      : "Bill of Lading";
+
+                  return (
+                    <button
+                      key={dType}
+                      onClick={() => {
+                        setActiveDocType(dType);
+                        // Reset highlighted field when switching doc manually
+                        setHighlightedFieldKey(null);
+                      }}
+                      className={`flex items-center gap-1.5 rounded-t-lg border-t border-x px-3 py-2 text-xs font-medium transition-all ${
+                        isActive
+                          ? "border-slate-300 bg-white text-slate-900 font-semibold shadow-xs"
+                          : "border-transparent text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <FileText className="h-3.5 w-3.5 text-slate-500" />
+                      <span>{label}</span>
+                      {doc && (
+                        <span
+                          className={`rounded px-1 text-[9px] font-mono font-bold ${
+                            doc.is_unreadable
+                              ? "bg-rose-100 text-rose-800"
+                              : doc.avg_confidence >= 0.85
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-amber-100 text-amber-900"
+                          }`}
+                        >
+                          {doc.is_unreadable ? "UNREADABLE" : `${Math.round(doc.avg_confidence * 100)}%`}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
+
+              {/* Skew & Bilingual Meta Badge on Tab Bar + Minimize Button */}
+              <div className="flex items-center gap-2 pb-1">
+                {activeDoc && (
+                  <div className="hidden sm:flex items-center gap-1.5 text-[10px]">
+                    {activeDoc.is_bilingual && (
+                      <span className="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.2 border border-indigo-200 font-mono">
+                        {activeDoc.language_hint || "Bilingual"}
+                      </span>
+                    )}
+                    {activeDoc.skew_angle_deg !== 0 && (
+                      <span className="rounded bg-amber-50 text-amber-800 px-1.5 py-0.2 border border-amber-300 font-mono">
+                        {activeDoc.skew_angle_deg}° Skew
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Minimize Document Pane Toggle Button */}
+                <button
+                  onClick={() => setIsDocumentCollapsed(true)}
+                  title="Minimize Document Viewer (Expands Field & Cross-Check Panel to Full Width)"
+                  className="hidden lg:flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 hover:border-slate-300 hover:text-slate-900 transition-all shadow-2xs"
+                >
+                  <PanelLeftClose className="h-3.5 w-3.5 text-slate-500" />
+                  <span className="hidden xl:inline">Minimize</span>
+                </button>
+              </div>
+            </div>
 
           {/* Scan Ergonomics & De-Skew Toolbar */}
           <div className="flex flex-wrap items-center justify-between border-b border-slate-100 bg-white px-3 py-1.5 text-xs">
@@ -992,15 +1061,36 @@ export default function ReviewWorkbenchPage() {
             )}
           </div>
         </div>
+        )}
 
         {/* =======================================================================
-            STEP 3: RIGHT PANE (50% DESKTOP WIDTH) — 3-WAY CROSS-CHECK MATRIX & FIELDS
+            STEP 3: RIGHT PANE — 3-WAY CROSS-CHECK MATRIX & FIELDS (EXPANDS FULL WIDTH)
             ======================================================================= */}
         <div
-          className={`flex-1 flex flex-col space-y-4 ${
+          className={`flex-1 flex flex-col space-y-4 transition-all duration-300 ease-in-out ${
+            isDocumentCollapsed ? "lg:w-full" : "lg:w-1/2"
+          } ${
             mobileView === "DOC" ? "hidden lg:flex" : "flex"
           }`}
         >
+          {/* Minimized Document Notification Bar with Restore Link */}
+          {isDocumentCollapsed && (
+            <div className="hidden lg:flex items-center justify-between rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-2 text-xs shadow-2xs">
+              <div className="flex items-center gap-2 text-emerald-900 font-medium">
+                <PanelLeftOpen className="h-4 w-4 text-emerald-600" />
+                <span>
+                  <strong>Full-Width Inspection Mode Active</strong> — Document viewer is minimized. Click any field below or hit <kbd className="px-1.5 py-0.5 rounded bg-white border border-emerald-300 font-mono text-[10px]">Expand</kbd> to restore the side-by-side view.
+                </span>
+              </div>
+              <button
+                onClick={() => setIsDocumentCollapsed(false)}
+                className="flex items-center gap-1 font-mono text-xs font-semibold text-emerald-700 hover:text-emerald-900 bg-white border border-emerald-300 rounded-md px-2.5 py-1 shadow-2xs hover:bg-emerald-50 transition-colors"
+              >
+                <span>Restore Split View</span>
+                <span>⤢</span>
+              </button>
+            </div>
+          )}
           {/* ---------------------------------------------------------------------
               PANEL 1: 3-WAY CROSS-CHECK MATRIX (INVOICE VS PACKING LIST VS BOL)
               --------------------------------------------------------------------- */}

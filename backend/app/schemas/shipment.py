@@ -148,6 +148,7 @@ class ShipmentResponse(BaseModel):
     fields: List[ExtractedFieldResponse] = []
     line_items: List[ShipmentLineItemResponse] = []
     cross_checks: List[CrossCheckResultResponse] = []
+    edit_history: List[FieldEditHistoryResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

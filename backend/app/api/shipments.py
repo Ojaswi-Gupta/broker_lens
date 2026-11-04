@@ -32,6 +32,7 @@ from app.schemas.shipment import (
     ExtractedFieldResponse,
     ShipmentLineItemResponse,
     CrossCheckResultResponse,
+    FieldEditHistoryResponse,
 )
 from app.schemas.extraction import DemoBundleRequest
 from app.core.privacy import mask_email, mask_phone, mask_iec
@@ -119,6 +120,10 @@ def serialize_shipment_detail(shipment: Shipment, mask_pii: bool = True) -> Ship
         fields=[ExtractedFieldResponse.model_validate(f) for f in shipment.fields],
         line_items=[ShipmentLineItemResponse.model_validate(li) for li in shipment.line_items],
         cross_checks=[CrossCheckResultResponse.model_validate(cc) for cc in shipment.cross_checks],
+        edit_history=[
+            FieldEditHistoryResponse.model_validate(h)
+            for h in sorted(shipment.edit_history, key=lambda x: x.created_at, reverse=True)
+        ] if shipment.edit_history else [],
     )
 
 

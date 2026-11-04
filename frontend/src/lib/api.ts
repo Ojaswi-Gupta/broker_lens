@@ -200,6 +200,10 @@ class ApiClient {
     return this.request<ExportPreviewResponse>(`/api/shipments/${shipmentCode}/export/preview`);
   }
 
+  async getExportPreview(shipmentCode: string): Promise<ExportPreviewResponse> {
+    return this.previewExport(shipmentCode);
+  }
+
   async downloadExportCsv(shipmentCode: string): Promise<string> {
     const url = `${API_BASE_URL}/api/shipments/${shipmentCode}/export`;
     const headers = this.getAuthHeader();

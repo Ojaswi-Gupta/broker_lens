@@ -129,6 +129,7 @@ export interface Shipment {
   fields: ExtractedField[];
   line_items: ShipmentLineItem[];
   cross_checks: CrossCheckResult[];
+  edit_history?: FieldEditHistoryItem[];
 }
 
 export interface AnalyticsSummary {

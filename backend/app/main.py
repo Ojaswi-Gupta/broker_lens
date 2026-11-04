@@ -10,6 +10,7 @@ from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.api.auth import router as auth_router
 from app.api.shipments import router as shipments_router
+from app.api.review import router as review_router
 from app.services.seeder import seed_database
 
 
@@ -51,6 +52,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # Include Routers
 app.include_router(auth_router)
 app.include_router(shipments_router)
+app.include_router(review_router)
 
 
 @app.get("/api/health", tags=["Health"])

@@ -942,25 +942,26 @@ def seed_database(db: Session, force_refresh: bool = False) -> None:
             ("Hamburg Chemie GmbH", "SHP-244", "Germany"),
         ]
         fields_pool = [
-            ("invoice_number", "Invoice Number", "INVOICE", 0.99, True, "AI extraction verified"),
-            ("invoice_date", "Invoice Date", "INVOICE", 0.98, True, "AI extraction verified"),
-            ("hsn_code", "8-Digit HSN Code", "INVOICE", 0.91, False, "Corrected 8-digit tariff suffix for Indian customs classification"),
-            ("incoterm", "Incoterm", "INVOICE", 0.93, True, "AI extraction verified"),
-            ("gross_weight_kg", "Gross Weight (KG)", "INVOICE", 0.94, False, "Corrected 45kg wooden pallet tare dunnage delta"),
-            ("unit_price", "Unit Price", "INVOICE", 0.97, True, "AI extraction verified"),
-            ("packages", "Package Count", "PACKING_LIST", 0.96, True, "AI extraction verified"),
-            ("container_number", "Container Number", "BILL_OF_LADING", 0.98, True, "AI extraction verified"),
+            ("invoice_number", "Invoice Number", "INVOICE", 0.99, "AI extraction verified"),
+            ("invoice_date", "Invoice Date", "INVOICE", 0.98, "AI extraction verified"),
+            ("hsn_code", "8-Digit HSN Code", "INVOICE", 0.92, "Corrected 8-digit tariff suffix for Indian customs classification"),
+            ("incoterm", "Incoterm", "INVOICE", 0.94, "AI extraction verified"),
+            ("gross_weight_kg", "Gross Weight (KG)", "INVOICE", 0.95, "Corrected 45kg wooden pallet tare dunnage delta"),
+            ("unit_price", "Unit Price", "INVOICE", 0.97, "AI extraction verified"),
+            ("packages", "Package Count", "PACKING_LIST", 0.96, "AI extraction verified"),
+            ("container_number", "Container Number", "BILL_OF_LADING", 0.98, "AI extraction verified"),
         ]
 
         # Generate 64 realistic historical edits spanning past 30 days
+        # Calibrated for ~95.3% AI accuracy benchmark (61 matches, 3 human corrections)
+        correction_indices = {17, 33, 49}
         for i in range(1, 65):
             supp_name, supp_code_prefix, country = suppliers_pool[i % len(suppliers_pool)]
-            f_key, f_label, doc_type, base_conf, default_correct, edit_msg = fields_pool[i % len(fields_pool)]
+            f_key, f_label, doc_type, base_conf, edit_msg = fields_pool[i % len(fields_pool)]
             shp_code = f"{supp_code_prefix}{i:02d}"
 
-            # Add subtle variance
-            was_correct = default_correct if (i % 7 != 0) else False
-            conf = max(0.65, min(0.99, base_conf + ((i % 5) - 2) * 0.02))
+            was_correct = i not in correction_indices
+            conf = max(0.85, min(0.99, base_conf + ((i % 5) - 2) * 0.01))
             orig_val = f"VAL_{i}_{f_key}"
             human_val = orig_val if was_correct else f"VAL_{i}_{f_key}_CORRECTED"
 

@@ -21,14 +21,20 @@ from app.schemas.shipment import (
     ShipmentResponse,
     ShipmentSummaryResponse,
     ShipmentCreateRequest,
-    FieldUpdateRequest,
-    CrossCheckResolveRequest,
 )
 from app.schemas.extraction import (
     ExtractedFieldCandidate,
     ExtractedLineItemCandidate,
     DocumentExtractionOutput,
     DemoBundleRequest,
+)
+from app.schemas.review import (
+    FieldUpdateRequest,
+    LineItemUpdateRequest,
+    CrossCheckResolveRequest,
+    ShipmentApprovalRequest,
+    ExportBlockerDetail,
+    ExportPreviewResponse,
 )
 
 __all__ = [
@@ -50,10 +56,14 @@ __all__ = [
     "ShipmentResponse",
     "ShipmentSummaryResponse",
     "ShipmentCreateRequest",
-    "FieldUpdateRequest",
-    "CrossCheckResolveRequest",
     "ExtractedFieldCandidate",
     "ExtractedLineItemCandidate",
     "DocumentExtractionOutput",
     "DemoBundleRequest",
+    "FieldUpdateRequest",
+    "LineItemUpdateRequest",
+    "CrossCheckResolveRequest",
+    "ShipmentApprovalRequest",
+    "ExportBlockerDetail",
+    "ExportPreviewResponse",
 ]

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { api } from "@/lib/api";
+import { BrokerLensLogo } from "@/components/BrokerLensLogo";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -39,7 +40,9 @@ export function Navbar() {
   };
 
   const isNavActive = (href: string) => {
-    if (href === "/shipments" && (pathname === "/shipments" || pathname === "/")) return true;
+    if (href === "/shipments") {
+      return pathname === "/shipments" || pathname.startsWith("/shipments/");
+    }
     return pathname.startsWith(href);
   };
 
@@ -48,20 +51,7 @@ export function Navbar() {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Left: Brand & Navigation */}
         <div className="flex items-center gap-8">
-          <Link href="/shipments" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-white font-mono font-bold text-sm shadow-xs group-hover:bg-brand-accent transition-colors">
-              BL
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-sm tracking-tight text-slate-900">BrokerLens</span>
-                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-600 border border-slate-200">
-                  JNPT/Nhava Sheva
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-500 font-medium">Customs CHA 3-Way Workbench</span>
-            </div>
-          </Link>
+          <BrokerLensLogo size="sm" href="/" animated={true} />
 
           {/* Nav links */}
           <nav className="hidden md:flex items-center gap-1">

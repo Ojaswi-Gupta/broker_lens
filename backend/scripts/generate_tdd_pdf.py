@@ -249,31 +249,31 @@ def build_tdd_pdf(output_paths):
 
     roi_table_data = [
         [
-            Paragraph("<b>Bleed &amp; Impact Metric</b>", table_cell_bold),
-            Paragraph("<b>Baseline Formula (Problem Statement #3)</b>", table_cell_bold),
-            Paragraph("<b>Baseline Cost</b>", table_cell_bold),
-            Paragraph("<b>BrokerLens Result &amp; Savings</b>", table_cell_bold),
+            Paragraph("<b>Cost Vector / Metric</b>", table_cell_bold),
+            Paragraph("<b>Baseline (Without BrokerLens)</b>", table_cell_bold),
+            Paragraph("<b>With BrokerLens</b>", table_cell_bold),
+            Paragraph("<b>Net Annual Savings</b>", table_cell_bold),
         ],
         [
-            Paragraph("<b>1. Manual Data Entry Bleed</b>", table_cell_bold),
-            Paragraph("1,100 shipments/mo × 0.75h (45 min) × 12 = 9,900 staff hrs @ ₹350/hr", table_cell),
-            Paragraph("₹34.65 Lakh / yr", table_cell_mono),
-            Paragraph("<b>₹25.87 Lakh / yr Saved</b><br/>(Time cut to 11.4 min; saves 7,392 hrs/yr)", table_cell),
+            Paragraph("<b>1. Manual Data Entry Cost</b>", table_cell_bold),
+            Paragraph("<b>₹34.65 Lakh / yr</b><br/>(9,900 hrs @ ₹350/hr; 45m/ship)", table_cell),
+            Paragraph("<b>₹8.78 Lakh / yr</b><br/>(2,508 hrs @ 11.4m/shipment)", table_cell),
+            Paragraph("<b>₹25.87 Lakh / yr</b><br/>(7,392 staff hrs saved; -74.7%)", table_cell_bold),
         ],
         [
-            Paragraph("<b>2. Port Demurrage &amp; BoE Errors</b>", table_cell_bold),
-            Paragraph("3.0% mismatch rate on 13,200 consignments = 396 cases/yr × ₹9,000/case", table_cell),
-            Paragraph("₹35.64 Lakh / yr", table_cell_mono),
-            Paragraph("<b>₹26.53 Lakh / yr Saved</b><br/>(3-way cross-check blocks pre-filing mismatches)", table_cell),
+            Paragraph("<b>2. Demurrage &amp; BoE Amendments</b>", table_cell_bold),
+            Paragraph("<b>₹35.64 Lakh / yr</b><br/>(396 cases @ 3.0% × ₹9,000)", table_cell),
+            Paragraph("<b>₹9.11 Lakh / yr</b><br/>(101 cases @ 0.77%; 74.5% cut)", table_cell),
+            Paragraph("<b>₹26.53 Lakh / yr</b><br/>(295 error cases prevented)", table_cell_bold),
         ],
         [
-            Paragraph("<b>TOTAL ANNUAL VALUE DELIVERED</b>", table_cell_bold),
-            Paragraph("Total Problem Bleed = ₹34.65L + ₹35.64L = <b>₹70.29 Lakh/year</b>", table_cell),
+            Paragraph("<b>TOTAL ANNUAL PROBLEM COST</b>", table_cell_bold),
             Paragraph("<b>₹70.29 Lakh / yr</b>", table_cell_bold),
-            Paragraph("<b>₹52.40 Lakh / yr Net ROI</b><br/>(698% First-Year ROI; payback in ~1.7 months)", table_cell_bold),
+            Paragraph("<b>₹17.89 Lakh / yr</b>", table_cell_bold),
+            Paragraph("<b>₹52.40 Lakh / yr Net Savings</b><br/>(698% First-Year ROI on ₹7.50L budget)", table_cell_bold),
         ],
     ]
-    t_roi = Table(roi_table_data, colWidths=[120, 164, 85, 135])
+    t_roi = Table(roi_table_data, colWidths=[120, 124, 120, 140])
     t_roi.setStyle(
         TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F172A")),

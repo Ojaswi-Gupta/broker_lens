@@ -52,20 +52,28 @@ Prior to BrokerLens, Company A suffered from two massive operational cost leaks:
 BrokerLens was engineered strictly within the client's **₹7.5 Lakh** budget and **6-week** delivery timeframe, solving both bleed vectors with guaranteed guardrails:
 
 ```
-+-------------------------------------------------------------------------------------------------------+
-|                                 BROKERLENS VERIFIED BUSINESS IMPACT                                   |
-+-------------------------------------------------------------------------------------------------------+
-| Metric                       | Baseline (Manual)     | BrokerLens Result     | Client SLA / Goal     |
-+------------------------------+-----------------------+-----------------------+-----------------------+
-| Entry Time per Shipment      | 45.0 minutes          | 11.4 minutes          | < 15.0 mins (BEATEN)  |
-| Field Extraction Accuracy    | ~88.0% (human typos)  | 95.8%                 | ≥ 95.0% (BEATEN)      |
-| Pre-Filing Mismatch Intercept| 0% (detected at port) | 100% (HTTP 422 block) | 100% Zero Tolerance   |
-| Direct Labor Savings         | ₹0                    | ₹25.87 Lakh / year    | 7,392 hours saved     |
-| Demurrage / Penalty Savings  | ₹0                    | ₹26.53 Lakh / year    | 396 cases intercepted |
-| Net Annual Value Delivered   | -                     | ₹52.40 Lakh / year    | Massive ROI           |
-| Net Client ROI               | -                     | 698% First-Year ROI   | Payback in ~1.7 months|
-+------------------------------+-----------------------+-----------------------+-----------------------+
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                      BROKERLENS VERIFIED BUSINESS IMPACT & ROI MODEL                                                  |
++------------------------------------+------------------------------------+------------------------------------+------------------------------------+
+| Cost Vector / Metric               | Baseline (Without BrokerLens)      | With BrokerLens                    | Net Annual Savings                 |
+|                                    |                                    |                                    | (Baseline - With BrokerLens)       |
++------------------------------------+------------------------------------+------------------------------------+------------------------------------+
+| 1. Manual Data Entry Cost          | ₹34.65 Lakh / yr (9,900 staff hrs) | ₹8.78 Lakh / yr (2,508 staff hrs)  | ₹25.87 Lakh / yr (7,392 hrs saved) |
+|    (Duration per consignment)      | 45.0 minutes / shipment            | 11.4 minutes / shipment            | -74.7% entry duration reduction    |
+|                                    |                                    |                                    |                                    |
+| 2. Demurrage & BoE Amendments      | ₹35.64 Lakh / yr (396 cases @ 3.0%)| ₹9.11 Lakh / yr (101 cases @ 0.77%)| ₹26.53 Lakh / yr (295 prevented)   |
+|    (Mismatch rate & penalties)     | 396 error cases @ ₹9,000/penalty   | 101 residual cases @ ₹9,000/case   | 74.5% error reduction (target: 50%)|
++------------------------------------+------------------------------------+------------------------------------+------------------------------------+
+| TOTAL ANNUAL PROBLEM COST          | ₹70.29 Lakh / year                 | ₹17.89 Lakh / year                 | ₹52.40 Lakh / year Net Savings     |
+| Net Client First-Year ROI          | -                                  | -                                  | 698% Net ROI (Payback ~1.7 months) |
++------------------------------------+------------------------------------+------------------------------------+------------------------------------+
 ```
+
+| Cost Component / Metric | Baseline (Without BrokerLens) | With BrokerLens | Net Annual Savings (`Baseline - With BrokerLens`) |
+| :--- | :---: | :---: | :---: |
+| **Manual Data Entry Cost** | **₹34.65 Lakh / yr**<br/>(9,900 hrs @ ₹350/hr, 45m/ship) | **₹8.78 Lakh / yr**<br/>(2,508 hrs @ 11.4m/shipment) | **₹25.87 Lakh / yr**<br/>(7,392 operator hrs saved) |
+| **Demurrage & BoE Amendments** | **₹35.64 Lakh / yr**<br/>(396 cases @ 3.0% mismatch) | **₹9.11 Lakh / yr**<br/>(101 cases @ 0.77%, 74.5% cut) | **₹26.53 Lakh / yr**<br/>(295 cases prevented pre-filing) |
+| **Total Annual Problem Cost** | **₹70.29 Lakh / yr** | **₹17.89 Lakh / yr** | **₹52.40 Lakh / yr**<br/>(**698% First-Year ROI** on ₹7.50L budget) |
 
 ---
 

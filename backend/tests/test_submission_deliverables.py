@@ -45,11 +45,16 @@ def test_tdd_markdown_exists_and_contains_assumptions():
         assumption_tag = f"ASSUMPTION-0{i}"
         assert assumption_tag in content, f"Missing assumption tag: {assumption_tag}"
 
-    # Verify financial math alignment
-    assert "34.65" in content  # ₹34.65 Lakh labor bleed
-    assert "35.64" in content  # ₹35.64 Lakh demurrage bleed
-    assert "70.29" in content  # ₹70.29 Lakh total problem cost
-    assert "52.40" in content  # ₹52.40 Lakh net savings
+    # Verify financial math alignment and arithmetically self-consistent ROI table
+    assert "34.65" in content  # ₹34.65 Lakh baseline labor bleed
+    assert "35.64" in content  # ₹35.64 Lakh baseline demurrage bleed
+    assert "70.29" in content  # ₹70.29 Lakh baseline problem cost
+    assert "8.78" in content   # ₹8.78 Lakh with BrokerLens labor
+    assert "9.11" in content   # ₹9.11 Lakh with BrokerLens demurrage
+    assert "17.89" in content  # ₹17.89 Lakh with BrokerLens total cost
+    assert "25.87" in content  # ₹25.87 Lakh net labor savings
+    assert "26.53" in content  # ₹26.53 Lakh net demurrage savings
+    assert "52.40" in content  # ₹52.40 Lakh net total savings
 
 
 def test_deployment_md_exists_and_contains_quickstart():

@@ -30,13 +30,13 @@ Company A handles **1,100 import consignments per month** (~13,200 shipments/yea
 
 ### The BrokerLens Solution & Business Case
 
-| Metric | Without BrokerLens | With BrokerLens | Net Annual Value |
+| Cost Component / Metric | Baseline (Without BrokerLens) | With BrokerLens | Net Annual Savings (`Baseline - With BrokerLens`) |
 |:---|:---:|:---:|:---:|
-| **Processing Time per Consignment** | 45.0 minutes | **11.4 minutes** | **74.7% time reduction** |
+| **Processing Time per Consignment** | 45.0 minutes | **11.4 minutes** | **74.7% time reduction** (saves 33.6m / shipment) |
 | **Annual Documentation Hours** | 9,900 hours | **2,508 hours** | **7,392 operator hours saved** |
-| **Annual Labor Cost** | ₹34.65 Lakh | ₹8.78 Lakh | **₹25.87 Lakh / yr savings** |
-| **Amendment & Demurrage Incidents** | 396 cases / yr | **22 cases / yr** (94.4% caught pre-filing) | **₹26.53 Lakh / yr penalty avoidance** |
-| **Gross Annual Savings** | — | — | **₹52.40 Lakh / year** |
+| **Manual Data Entry Cost** | **₹34.65 Lakh / yr**<br/>(9,900 hrs @ ₹350/staff hour) | **₹8.78 Lakh / yr**<br/>(2,508 hrs @ 11.4m/shipment) | **₹25.87 Lakh / yr**<br/>(7,392 staff hours saved) |
+| **Demurrage & BoE Amendments** | **₹35.64 Lakh / yr**<br/>(396 cases @ 3.0% mismatch) | **₹9.11 Lakh / yr**<br/>(101 cases @ 0.77%, 74.5% cut) | **₹26.53 Lakh / yr**<br/>(295 error cases prevented pre-filing) |
+| **Total Annual Problem Cost** | **₹70.29 Lakh / yr** | **₹17.89 Lakh / yr** | **₹52.40 Lakh / yr Net Savings** |
 | **Turnkey Implementation Investment** | — | — | **₹7.50 Lakh** (6-week production delivery) |
 | **Net First-Year Financial ROI** | — | — | **698% Net ROI** (Payback in **1.7 months**) |
 

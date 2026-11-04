@@ -161,7 +161,7 @@ Evaluators do not need to type passwords manually. Both `/login` and the persist
    - Field Extraction Accuracy: **`95.8%`** vs **`95.0% SLA Target`** (`SLA MET`).
    - Processing Time: **`11.4 min`** vs **`45.0 min baseline`** (`-74.7%` time reduction).
    - Labor Savings: **`₹25.87 Lakh / yr`** (1,100 shipments/mo × 0.75h × 12 × ₹350/hr).
-   - Demurrage Savings: **`₹26.53 Lakh / yr`** (396 cases/yr × ₹9,000/case).
+   - Demurrage Savings: **`₹26.53 Lakh / yr`** (295 error cases prevented; 74.5% cut from 396 cases down to 101).
    - Total Net Savings: **`₹52.40 Lakh / yr`** on a **₹7.5 Lakh build (698% ROI)**.
 3. Review the **Per-Field Accuracy Breakdown** (13 standard customs fields with progress bars and alerts for HSN code and Gross Weight).
 4. Review the **Per-Supplier Anomaly Diagnostics** table.

@@ -11,6 +11,14 @@ const config: Config = {
       colors: {
         slate: {
           50: "#F8FAFC",
+          100: "#F1F5F9",
+          200: "#E2E8F0",
+          300: "#CBD5E1",
+          400: "#94A3B8",
+          500: "#64748B",
+          600: "#475569",
+          700: "#334155",
+          800: "#1E293B",
           900: "#0F172A",
           950: "#020617",
         },
@@ -18,31 +26,15 @@ const config: Config = {
           primary: "#0F172A",
           secondary: "#1E293B",
           accent: "#2563EB",
-        },
-        confidence: {
-          high: {
-            text: "#065F46",
-            bg: "#ECFDF5",
-            badge: "#10B981",
-            border: "#A7F3D0",
-          },
-          amber: {
-            text: "#92400E",
-            bg: "#FFFBEB",
-            badge: "#F59E0B",
-            border: "#FDE68A",
-          },
-          red: {
-            text: "#991B1B",
-            bg: "#FEF2F2",
-            badge: "#EF4444",
-            border: "#FECACA",
-          },
+          accentHover: "#1D4ED8",
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "monospace"],
+      },
+      boxShadow: {
+        xs: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
       },
     },
   },

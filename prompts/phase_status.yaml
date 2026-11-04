@@ -52,7 +52,7 @@ phases:
     status: "COMPLETED"
     completed_at: "2026-11-04T13:56:00+05:30"
     commit_message: "frontend: build minimalist auth, shipment status dashboard, and 3-document upload flow"
-    commit_hash: "63314f1"
+    commit_hash: "dcb00bf"
     feedback: null
 
   - phase_id: 6

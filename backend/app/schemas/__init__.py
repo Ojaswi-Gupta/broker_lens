@@ -24,6 +24,12 @@ from app.schemas.shipment import (
     FieldUpdateRequest,
     CrossCheckResolveRequest,
 )
+from app.schemas.extraction import (
+    ExtractedFieldCandidate,
+    ExtractedLineItemCandidate,
+    DocumentExtractionOutput,
+    DemoBundleRequest,
+)
 
 __all__ = [
     "UserRole",
@@ -46,4 +52,8 @@ __all__ = [
     "ShipmentCreateRequest",
     "FieldUpdateRequest",
     "CrossCheckResolveRequest",
+    "ExtractedFieldCandidate",
+    "ExtractedLineItemCandidate",
+    "DocumentExtractionOutput",
+    "DemoBundleRequest",
 ]

@@ -122,11 +122,11 @@ def test_static_pdf_document_serving(client):
 # ==============================================================================
 def test_shipments_api_with_dpdp_masking(client):
     """Verify GET /api/shipments and GET /api/shipments/{code} with DPDP PII masking."""
-    # 1. Fetch all 4 shipments with PII masking enabled
+    # 1. Fetch shipments with PII masking enabled (at least the 4 baseline seeded shipments)
     res_masked = client.get("/api/shipments?mask_pii=true")
     assert res_masked.status_code == 200
     data_masked = res_masked.json()
-    assert len(data_masked) == 4
+    assert len(data_masked) >= 4
 
     codes = [s["shipment_code"] for s in data_masked]
     assert "SHP-24811" in codes

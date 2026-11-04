@@ -42,7 +42,7 @@ def get_accuracy_and_audit_analytics(
     if field_key:
         query = query.filter(FieldEditHistory.field_key == field_key)
 
-    all_history = query.order_by(desc(FieldEditHistory.created_at)).all()
+    all_history = query.order_by(desc(FieldEditHistory.created_at), desc(FieldEditHistory.id)).all()
     total_audited = len(all_history)
     correct_count = sum(1 for h in all_history if h.was_ai_correct)
     human_edits_count = total_audited - correct_count
@@ -164,7 +164,18 @@ def get_accuracy_and_audit_analytics(
             "avg_processing_time_mins": 11.4,
             "baseline_time_mins": 45.0,
             "time_saved_pct": 74.7,
-            "estimated_annual_savings_lakhs": 52.4,
+            "monthly_shipments_volume": 1100,
+            "annual_shipments_volume": 13200,
+            "documentation_team_size": 14,
+            "staff_hourly_rate_inr": 350.0,
+            "baseline_manual_entry_cost_lakhs": 34.65,
+            "baseline_error_demurrage_cost_lakhs": 35.64,
+            "total_baseline_problem_cost_lakhs": 70.29,
+            "labor_savings_lakhs": 25.87,
+            "demurrage_savings_lakhs": 26.53,
+            "estimated_annual_savings_lakhs": 52.40,
+            "project_build_cost_lakhs": 7.5,
+            "project_timeline_weeks": 6,
         },
         "by_field": by_field,
         "by_supplier": by_supplier,

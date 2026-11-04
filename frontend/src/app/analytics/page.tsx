@@ -340,15 +340,15 @@ export default function AnalyticsPage() {
             </div>
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-3xl font-extrabold font-mono text-slate-900 tabular-nums">
-                ₹25.9L
+                ₹25.87L
               </span>
               <span className="text-xs font-semibold text-slate-500">/ year</span>
             </div>
             <p className="mt-2 text-[11px] text-slate-600 line-clamp-2">
-              Based on 3,000 shipments/yr, 33.6m saved per shipment @ ₹500/hr documentation rate.
+              1,100/mo × 0.75h (45m) × 12 = 9,900 hrs/yr @ ₹350/hr = ₹34.65L baseline. Cut to 11.4m saves 7,392 hrs.
             </p>
             <p className="mt-1 text-[10px] text-slate-400 font-mono">
-              6,720 manual typing hours eliminated
+              Formula: 7,392 hrs × ₹350/hr = ₹25.87 Lakh/yr
             </p>
           </div>
 
@@ -356,7 +356,7 @@ export default function AnalyticsPage() {
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs bg-linear-to-b from-white to-emerald-50/20">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Demurrage & BoE Savings
+                Demurrage & Error Avoidance
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 text-[10px] font-bold">
                 HIGH ROI
@@ -364,16 +364,16 @@ export default function AnalyticsPage() {
             </div>
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-3xl font-extrabold font-mono text-emerald-700 tabular-nums">
-                ₹26.5L
+                ₹26.53L
               </span>
               <span className="text-xs font-semibold text-slate-500">/ year</span>
             </div>
             <p className="mt-2 text-[11px] text-slate-600 line-clamp-2">
-              Zero tolerance 3-way cross-check blocks mismatches before ICEGATE filing.
+              396 cases/yr (3% of 13,200) × ₹9,000 = ₹35.64L bleed. Pre-filing cross-checks block mismatches.
             </p>
             <div className="mt-1 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold">
-              <span className="text-slate-500">Total Client Value:</span>
-              <span className="font-mono text-emerald-700">₹52.4 Lakh / yr</span>
+              <span className="text-slate-500">Combined Value:</span>
+              <span className="font-mono text-emerald-700">₹52.40 Lakh / yr</span>
             </div>
           </div>
         </div>
@@ -384,6 +384,59 @@ export default function AnalyticsPage() {
           ))}
         </div>
       )}
+
+      {/* ISOCODE PROBLEM STATEMENT #3: CLIENT ROI & SIZING FORMULA */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4 text-xs text-blue-950">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-blue-200/80 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-blue-700 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider font-mono">
+              Problem Statement #3 Verified
+            </span>
+            <span className="font-semibold text-slate-900">
+              Company A (Navi Mumbai / Nhava Sheva) Business Case Model
+            </span>
+          </div>
+          <div className="flex items-center gap-3 font-mono text-[11px] text-blue-900">
+            <span>Volume: <strong>1,100 shipments/mo (13,200/yr)</strong></span>
+            <span>•</span>
+            <span>Team: <strong>14 Documentation Executives</strong></span>
+            <span>•</span>
+            <span>Staff Rate: <strong>₹350/hour</strong></span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 text-[11px] leading-relaxed">
+          <div className="rounded bg-white/90 p-3 border border-blue-200/60 space-y-1">
+            <div className="font-bold text-slate-900 flex items-center justify-between">
+              <span>1. Baseline Manual Entry Cost</span>
+              <span className="font-mono text-rose-700 font-bold">₹34.65 Lakh / yr</span>
+            </div>
+            <p className="text-slate-600">
+              1,100 shipments/mo × 0.75h (45 mins) × 12 = <span className="font-mono font-medium">9,900 hours/yr</span> × ₹350/staff hour = <strong className="font-mono text-slate-900">₹34.65 Lakh/yr</strong>.
+            </p>
+          </div>
+
+          <div className="rounded bg-white/90 p-3 border border-blue-200/60 space-y-1">
+            <div className="font-bold text-slate-900 flex items-center justify-between">
+              <span>2. Baseline Error & Demurrage Bleed</span>
+              <span className="font-mono text-rose-700 font-bold">₹35.64 Lakh / yr</span>
+            </div>
+            <p className="text-slate-600">
+              3% mismatch rate on 13,200 consignments = <span className="font-mono font-medium">396 cases/yr</span> × ₹9,000/case (Section 149 BoE amendments + port demurrage) = <strong className="font-mono text-slate-900">₹35.64 Lakh/yr</strong>.
+            </p>
+          </div>
+
+          <div className="rounded bg-emerald-50/90 p-3 border border-emerald-200 space-y-1">
+            <div className="font-bold text-emerald-950 flex items-center justify-between">
+              <span>3. BrokerLens Solution Net ROI</span>
+              <span className="font-mono text-emerald-700 font-bold">₹52.40 Lakh / yr</span>
+            </div>
+            <p className="text-emerald-900">
+              Cut entry time to 11.4 min saves <strong className="font-mono">₹25.87L</strong>; 3-way cross-check blocks mismatches saving <strong className="font-mono">₹26.53L</strong>. Total Net ROI: <strong className="font-mono text-emerald-950">₹52.40L/yr</strong> on a <strong className="font-mono">₹7.5L, 6-week build (698% ROI)</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* ==================================================================== */}
       {/* 3. SECTION 1: ACCURACY REPORT PER FIELD (WITH SLA PROGRESS BARS) */}

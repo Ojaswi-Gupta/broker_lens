@@ -45,16 +45,24 @@ def get_optional_user(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
     db: Session = Depends(get_db),
 ) -> Optional[User]:
-    """Extract authenticated user if present without blocking unauthenticated preview calls."""
+    """Extract authenticated user if present. If an Authorization header is provided, validate strictly."""
     if not auth or not auth.credentials:
         return None
-    try:
-        payload = decode_access_token(auth.credentials)
-        if not payload or not payload.get("sub"):
-            return None
-        return db.query(User).filter(User.id == int(payload["sub"])).first()
-    except Exception:
-        return None
+    payload = decode_access_token(auth.credentials)
+    if not payload or not payload.get("sub"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token is expired or invalid.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = db.query(User).filter(User.id == int(payload["sub"])).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User belonging to this token no longer exists.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
 
 
 def get_shipment_by_ref(ref: str, db: Session) -> Shipment:
@@ -102,6 +110,23 @@ def update_extracted_field(
 
     new_val = request.value.strip() if request.value is not None else field.current_value
     original_ai = field.ai_extracted_value
+
+    # Strict numeric validation: reject negative numbers on quantity/weight/price
+    numeric_keys = {"gross_weight_kg", "net_weight_kg", "qty", "invoice_total", "unit_price", "packages"}
+    if field.field_key in numeric_keys and new_val:
+        try:
+            val_clean = new_val.replace(",", "").replace("$", "").replace("€", "").replace("kg", "").replace("KG", "").strip()
+            numeric_val = float(val_clean)
+            if numeric_val < 0:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Field '{field.field_key}' cannot be negative (got '{new_val}').",
+                )
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Field '{field.field_key}' requires a valid numeric value (got '{new_val}').",
+            )
 
     was_correct = _normalize_string(original_ai) == _normalize_string(new_val)
 

@@ -20,6 +20,7 @@ from app.models.domain import (
 )
 from app.core.security import get_password_hash
 from app.services.pdf_seed_gen import generate_all_seed_pdfs
+from app.services.crosscheck_engine import run_three_way_crosschecks
 
 
 def seed_database(db: Session, force_refresh: bool = False) -> None:
@@ -335,63 +336,8 @@ def seed_database(db: Session, force_refresh: bool = False) -> None:
             is_confirmed_by_human=False,
         )
         db.add(item_1)
-
-        # Cross Checks
-        checks_1 = [
-            CrossCheckResult(
-                shipment_id=shp_1.id,
-                rule_code="INVOICE_TOTAL_VS_LINE_SUM",
-                rule_name="Invoice Total vs Sum of Line Items",
-                compared_fields="invoice_total, line_items.line_total",
-                invoice_value="USD 16,320.00",
-                packing_list_value="USD 16,320.00",
-                bol_value=None,
-                discrepancy_delta="0.00",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="2400 PCS * USD 6.80 = USD 16,320.00 matches Invoice Total exactly.",
-            ),
-            CrossCheckResult(
-                shipment_id=shp_1.id,
-                rule_code="THREE_WAY_GROSS_WEIGHT",
-                rule_name="3-Way Gross Weight Cross-Check",
-                compared_fields="gross_weight_kg",
-                invoice_value="3,120.00 kg",
-                packing_list_value="3,165.00 kg",
-                bol_value="3,165.00 kg",
-                discrepancy_delta="45.00 kg delta between Invoice (3,120 kg) and Packing List/BoL (3,165 kg)",
-                status="FAILED",
-                severity="CRITICAL",
-                explanation="Invoice gross weight is 45.00 kg lower than Packing List and Bill of Lading. Discrepancy blocks customs export until resolved.",
-            ),
-            CrossCheckResult(
-                shipment_id=shp_1.id,
-                rule_code="THREE_WAY_PACKAGES_AND_QTY",
-                rule_name="3-Way Package Count & Quantity",
-                compared_fields="packages, line_items.qty",
-                invoice_value="240 Cartons / 2,400 PCS",
-                packing_list_value="240 Cartons / 2,400 PCS",
-                bol_value="240 Cartons",
-                discrepancy_delta="0",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="2,400 PCS across 240 cartons consistent across Invoice, Packing List, and Bill of Lading.",
-            ),
-            CrossCheckResult(
-                shipment_id=shp_1.id,
-                rule_code="THREE_WAY_CONTAINER",
-                rule_name="3-Way Container Number Match",
-                compared_fields="container_number",
-                invoice_value="MSCU8492014",
-                packing_list_value="MSCU8492014",
-                bol_value="MSCU8492014",
-                discrepancy_delta="MATCH",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="Container number MSCU8492014 matches across all 3 documents.",
-            ),
-        ]
-        db.add_all(checks_1)
+        db.flush()
+        run_three_way_crosschecks(db, shp_1)
 
     # --------------------------------------------------------------------------
     # SHIPMENT 2: SHP-24812 (Company C, Sweden) — Skewed Scan (-2.8°) & Low Confidence
@@ -593,62 +539,8 @@ def seed_database(db: Session, force_refresh: bool = False) -> None:
             is_confirmed_by_human=False,
         )
         db.add(item_2)
-
-        checks_2 = [
-            CrossCheckResult(
-                shipment_id=shp_2.id,
-                rule_code="INVOICE_TOTAL_VS_LINE_SUM",
-                rule_name="Invoice Total vs Sum of Line Items",
-                compared_fields="invoice_total, line_items.line_total",
-                invoice_value="EUR 7,650.00",
-                packing_list_value="EUR 7,650.00",
-                bol_value=None,
-                discrepancy_delta="0.00",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="180 NOS * EUR 42.50 = EUR 7,650.00 matches Invoice Total exactly.",
-            ),
-            CrossCheckResult(
-                shipment_id=shp_2.id,
-                rule_code="THREE_WAY_GROSS_WEIGHT",
-                rule_name="3-Way Gross Weight Cross-Check",
-                compared_fields="gross_weight_kg",
-                invoice_value="1,460.00 kg",
-                packing_list_value="1,460.00 kg",
-                bol_value="1,460.00 kg",
-                discrepancy_delta="0.00",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="1,460.00 kg matches exactly across Invoice, Packing List, and Bill of Lading.",
-            ),
-            CrossCheckResult(
-                shipment_id=shp_2.id,
-                rule_code="THREE_WAY_PACKAGES_AND_QTY",
-                rule_name="3-Way Package Count & Quantity",
-                compared_fields="packages, line_items.qty",
-                invoice_value="18 Crates / 180 NOS",
-                packing_list_value="18 Crates / 180 NOS",
-                bol_value="18 Crates",
-                discrepancy_delta="0",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="180 NOS across 18 wooden crates matches across all 3 documents.",
-            ),
-            CrossCheckResult(
-                shipment_id=shp_2.id,
-                rule_code="THREE_WAY_CONTAINER",
-                rule_name="3-Way Container Number Match",
-                compared_fields="container_number",
-                invoice_value="HLXU4029183",
-                packing_list_value="HLXU4029183",
-                bol_value="HLXU4029183",
-                discrepancy_delta="MATCH",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="Container HLXU4029183 matches across all 3 documents.",
-            ),
-        ]
-        db.add_all(checks_2)
+        db.flush()
+        run_three_way_crosschecks(db, shp_2)
 
     # --------------------------------------------------------------------------
     # SHIPMENT 3: SHP-24813 (Shenzhen Precision Motors) — Fully Approved
@@ -789,36 +681,8 @@ def seed_database(db: Session, force_refresh: bool = False) -> None:
             is_confirmed_by_human=True,
         )
         db.add(item_3)
-
-        checks_3 = [
-            CrossCheckResult(
-                shipment_id=shp_3.id,
-                rule_code="INVOICE_TOTAL_VS_LINE_SUM",
-                rule_name="Invoice Total vs Sum of Line Items",
-                compared_fields="invoice_total, line_total",
-                invoice_value="USD 22,500.00",
-                packing_list_value="USD 22,500.00",
-                bol_value=None,
-                discrepancy_delta="0.00",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="500 PCS * USD 45.00 = USD 22,500.00 matches Invoice Total exactly.",
-            ),
-            CrossCheckResult(
-                shipment_id=shp_3.id,
-                rule_code="THREE_WAY_GROSS_WEIGHT",
-                rule_name="3-Way Gross Weight Cross-Check",
-                compared_fields="gross_weight_kg",
-                invoice_value="4,250.00 kg",
-                packing_list_value="4,250.00 kg",
-                bol_value="4,250.00 kg",
-                discrepancy_delta="0.00",
-                status="PASSED",
-                severity="CRITICAL",
-                explanation="4,250.00 kg matches exactly across Invoice, Packing List, and Bill of Lading.",
-            ),
-        ]
-        db.add_all(checks_3)
+        db.flush()
+        run_three_way_crosschecks(db, shp_3)
 
     # --------------------------------------------------------------------------
     # SHIPMENT 4: SHP-24814 (Hamburg Chemie GmbH) — Degraded / Unreadable PL Page
@@ -911,23 +775,8 @@ def seed_database(db: Session, force_refresh: bool = False) -> None:
             ),
         ]
         db.add_all(fields_4)
-
-        checks_4 = [
-            CrossCheckResult(
-                shipment_id=shp_4.id,
-                rule_code="THREE_WAY_GROSS_WEIGHT",
-                rule_name="3-Way Gross Weight Cross-Check",
-                compared_fields="gross_weight_kg",
-                invoice_value="16,400.00 kg",
-                packing_list_value="[AWAITING MANUAL ENTRY - UNREADABLE SCAN]",
-                bol_value="16,400.00 kg",
-                discrepancy_delta="UNVERIFIED",
-                status="FAILED",
-                severity="CRITICAL",
-                explanation="Packing List scan illegible (confidence 0.31). Guided manual entry required.",
-            )
-        ]
-        db.add_all(checks_4)
+        db.flush()
+        run_three_way_crosschecks(db, shp_4)
 
     # --------------------------------------------------------------------------
     # 60+ HISTORICAL FIELD EDIT RECORDS FOR ACCURACY ANALYTICS
@@ -979,7 +828,7 @@ def seed_database(db: Session, force_refresh: bool = False) -> None:
                 edited_by_name="Rohan Deshmukh" if (i % 2 == 0) else "Priya Nair",
                 edited_by_role="DOCUMENTATION_EXECUTIVE" if (i % 2 == 0) else "DOCUMENTATION_MANAGER",
                 edit_reason="Verified against original bill" if was_correct else edit_msg,
-                created_at=datetime.utcnow() - timedelta(days=(30 - (i // 2))),
+                created_at=datetime.utcnow() - timedelta(days=(40 - (i // 2))),
             )
             history_records.append(record)
 

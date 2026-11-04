@@ -233,8 +233,8 @@ export default function ShipmentsPage() {
             </span>
             <span className="text-xs text-slate-500 font-mono">(&gt;95.0% SLA)</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-600 font-medium">
-            <span className="font-semibold text-slate-900 font-mono">₹52.4 Lakh / yr</span> projected savings
+          <div className="mt-2 text-[11px] text-slate-600 font-medium" title="14 documentation execs, 13,200 shipments/yr: ₹25.87L labor + ₹26.53L demurrage avoidance">
+            <span className="font-semibold text-slate-900 font-mono">₹52.40 Lakh / yr</span> net client savings
           </div>
         </div>
       </div>

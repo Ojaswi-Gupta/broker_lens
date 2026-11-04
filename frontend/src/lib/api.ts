@@ -16,6 +16,40 @@ import {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 class ApiClient {
+  private tokenPromise: Promise<string | null> | null = null;
+
+  private async ensureToken(): Promise<string | null> {
+    if (typeof window === "undefined") return null;
+    const existing = localStorage.getItem("brokerlens_token");
+    if (existing) return existing;
+
+    if (!this.tokenPromise) {
+      this.tokenPromise = (async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/auth/demo-login?role=DOCUMENTATION_EXECUTIVE`, {
+            method: "POST",
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.access_token) {
+              localStorage.setItem("brokerlens_token", data.access_token);
+              if (data.user) {
+                localStorage.setItem("brokerlens_user", JSON.stringify(data.user));
+              }
+              return data.access_token;
+            }
+          }
+        } catch {
+          // ignore network failure
+        }
+        return null;
+      })();
+    }
+    const token = await this.tokenPromise;
+    this.tokenPromise = null;
+    return token;
+  }
+
   private getAuthHeader(): Record<string, string> {
     if (typeof window === "undefined") return {};
     const token = localStorage.getItem("brokerlens_token");
@@ -23,6 +57,10 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    if (!endpoint.includes("/api/auth/login") && !endpoint.includes("/api/auth/demo-login")) {
+      await this.ensureToken();
+    }
+
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = {
       "Content-Type": "application/json",
@@ -97,6 +135,7 @@ class ApiClient {
   }
 
   async uploadShipmentDocument(code: string, docType: string, file: File): Promise<any> {
+    await this.ensureToken();
     const formData = new FormData();
     formData.append("file", file);
 
@@ -208,6 +247,7 @@ class ApiClient {
     | { ok: true; csvText: string; filename: string }
     | { ok: false; status: number; blockerDetail: any }
   > {
+    await this.ensureToken();
     const url = `${API_BASE_URL}/api/shipments/${shipmentCode}/export`;
     const headers = this.getAuthHeader();
     const response = await fetch(url, { headers });
@@ -240,6 +280,15 @@ class ApiClient {
     if (fieldKey) params.append("field_key", fieldKey);
     const qs = params.toString() ? `?${params.toString()}` : "";
     return this.request<AnalyticsOverview>(`/api/analytics/overview${qs}`);
+  }
+
+  // ============================================================================
+  // DEMO EVALUATION RESET
+  // ============================================================================
+  async resetDemoData(): Promise<{ status: string; shipments_count: number }> {
+    return this.request<{ status: string; shipments_count: number }>("/api/shipments/reset-demo", {
+      method: "POST",
+    });
   }
 }
 

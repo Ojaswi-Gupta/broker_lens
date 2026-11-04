@@ -13,11 +13,11 @@ class FieldUpdateRequest(BaseModel):
 class LineItemUpdateRequest(BaseModel):
     description: Optional[str] = None
     hsn_code: Optional[str] = None
-    qty: Optional[float] = None
+    qty: Optional[float] = Field(None, ge=0.0)
     unit: Optional[str] = None
-    unit_price: Optional[float] = None
-    line_total: Optional[float] = None
-    gross_weight_kg: Optional[float] = None
+    unit_price: Optional[float] = Field(None, ge=0.0)
+    line_total: Optional[float] = Field(None, ge=0.0)
+    gross_weight_kg: Optional[float] = Field(None, ge=0.0)
     is_confirmed_by_human: bool = True
     edit_reason: Optional[str] = "Line item verification"
 

@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { api } from "@/lib/api";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -14,11 +15,28 @@ import {
   Layers,
   ArrowRightLeft,
   LogIn,
+  RotateCcw,
 } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, maskPii, toggleMaskPii, switchDemoRole, isLoading } = useApp();
+  const { user, maskPii, toggleMaskPii, switchDemoRole, isLoading, showToast } = useApp();
+  const [isResetting, setIsResetting] = React.useState(false);
+
+  const handleResetDemo = async () => {
+    if (isResetting) return;
+    setIsResetting(true);
+    try {
+      await api.resetDemoData();
+      showToast("✓ Demo consignments & audit trail reset to baseline seed state.");
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to reset demo data");
+      setIsResetting(false);
+    }
+  };
 
   const isNavActive = (href: string) => {
     if (href === "/shipments" && (pathname === "/shipments" || pathname === "/")) return true;
@@ -110,6 +128,17 @@ export function Navbar() {
                 <span className="sm:hidden font-mono text-slate-600">PII OFF</span>
               </>
             )}
+          </button>
+
+          {/* 1-Click Demo Reset Button */}
+          <button
+            onClick={handleResetDemo}
+            disabled={isResetting}
+            title="Reset SHP-24811..24814 and audit logs to initial seed state"
+            className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors disabled:opacity-50"
+          >
+            <RotateCcw className={`h-3.5 w-3.5 ${isResetting ? "animate-spin text-blue-600" : "text-slate-400"}`} />
+            <span className="hidden sm:inline">Reset Demo</span>
           </button>
 
           {/* 1-Click Role Switcher */}

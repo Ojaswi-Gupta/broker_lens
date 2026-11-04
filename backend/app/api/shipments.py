@@ -38,6 +38,7 @@ from app.schemas.extraction import DemoBundleRequest
 from app.core.privacy import mask_email, mask_phone, mask_iec
 from app.services.ai_extractor import ai_extractor_service
 from app.services.pdf_seed_gen import DEFAULT_DOCS_DIR
+from app.services.seeder import seed_database
 from app.config import settings
 
 router = APIRouter(prefix="/api/shipments", tags=["Shipments & Extraction"])
@@ -207,11 +208,19 @@ def get_shipment_by_code(
 @router.post("/{shipment_code}/documents", response_model=ShipmentDocumentResponse)
 async def upload_document(
     shipment_code: str,
-    doc_type: str = Form(..., description="Document type: INVOICE, PACKING_LIST, or BILL_OF_LADING"),
+    doc_type: Optional[str] = Query(None, description="Document type query parameter"),
+    doc_type_form: Optional[str] = Form(None, alias="doc_type", description="Document type form parameter"),
     file: UploadFile = File(..., description="Document file (.pdf, .png, .jpg, .jpeg up to 15MB)"),
     db: Session = Depends(get_db),
 ):
     """Upload a customs document (PDF or image) with strict MIME & size validation."""
+    effective_doc_type = doc_type or doc_type_form
+    if not effective_doc_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required doc_type (must be INVOICE, PACKING_LIST, or BILL_OF_LADING).",
+        )
+
     shipment = db.query(Shipment).filter(Shipment.shipment_code == shipment_code.upper()).first()
     if not shipment:
         raise HTTPException(
@@ -219,7 +228,7 @@ async def upload_document(
             detail=f"Shipment '{shipment_code}' not found.",
         )
 
-    doc_type_upper = doc_type.upper().strip()
+    doc_type_upper = effective_doc_type.upper().strip()
     if doc_type_upper not in {"INVOICE", "PACKING_LIST", "BILL_OF_LADING"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -545,3 +554,12 @@ def create_and_extract_demo_bundle(
 
     # Trigger extraction pipeline
     return run_extraction_for_shipment(bundle_code, db=db)
+
+
+@router.post("/reset-demo")
+def reset_demo_database(db: Session = Depends(get_db)):
+    """Reset all shipments, documents, line items, cross-checks, and audit history to initial seeded state."""
+    seed_database(db, force_refresh=True)
+    count = db.query(Shipment).count()
+    return {"status": "reset_complete", "shipments_count": count}
+

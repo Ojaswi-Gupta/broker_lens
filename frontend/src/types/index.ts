@@ -140,7 +140,18 @@ export interface AnalyticsSummary {
   avg_processing_time_mins: number;
   baseline_time_mins: number;
   time_saved_pct: number;
+  monthly_shipments_volume?: number;
+  annual_shipments_volume?: number;
+  documentation_team_size?: number;
+  staff_hourly_rate_inr?: number;
+  baseline_manual_entry_cost_lakhs?: number;
+  baseline_error_demurrage_cost_lakhs?: number;
+  total_baseline_problem_cost_lakhs?: number;
+  labor_savings_lakhs?: number;
+  demurrage_savings_lakhs?: number;
   estimated_annual_savings_lakhs: number;
+  project_build_cost_lakhs?: number;
+  project_timeline_weeks?: number;
 }
 
 export interface AnalyticsFieldBreakdown {

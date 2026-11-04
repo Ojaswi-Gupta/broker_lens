@@ -204,18 +204,31 @@ class ApiClient {
     return this.previewExport(shipmentCode);
   }
 
-  async downloadExportCsv(shipmentCode: string): Promise<string> {
+  async downloadExportCsv(shipmentCode: string): Promise<
+    | { ok: true; csvText: string; filename: string }
+    | { ok: false; status: number; blockerDetail: any }
+  > {
     const url = `${API_BASE_URL}/api/shipments/${shipmentCode}/export`;
     const headers = this.getAuthHeader();
     const response = await fetch(url, { headers });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ detail: "Export rejected by gatekeeper" }));
-      const msg = typeof err.detail === "object" ? err.detail.message || JSON.stringify(err.detail) : err.detail;
-      throw new Error(msg || "Export blocked");
+    if (response.ok) {
+      const csvText = await response.text();
+      const disposition = response.headers.get("content-disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : `BrokerLens_Filing_${shipmentCode}.csv`;
+      return { ok: true, csvText, filename };
     }
 
-    return response.text();
+    let blockerDetail: any = null;
+    try {
+      const json = await response.json();
+      blockerDetail = json.detail;
+    } catch {
+      blockerDetail = { message: "Export blocked by customs gatekeeper." };
+    }
+
+    return { ok: false, status: response.status, blockerDetail };
   }
 
   // ============================================================================

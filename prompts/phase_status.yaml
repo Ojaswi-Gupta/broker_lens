@@ -60,7 +60,7 @@ phases:
     status: "COMPLETED"
     completed_at: "2026-11-04T17:35:00+05:30"
     commit_message: "build split-screen document viewer, low-confidence review, and 3-way cross-check matrix"
-    commit_hash: "dcebcd7"
+    commit_hash: "0907055"
     feedback: null
 
   - phase_id: 7
